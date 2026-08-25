@@ -2,6 +2,133 @@
 
 ---
 
+## Iteración 03 — Inventario de wireframes (revisión visual) y Dashboard
+
+### Objetivo
+
+1. Revisar visualmente **todos** los wireframes de `docs/wireframes/` — primera iteración con capacidad de visión — y registrar un inventario fiable.
+2. Implementar la primera pantalla del orden recomendado: **Dashboard**, cubriendo los wireframes `Dashboard.png` y `Dashboard inventory in real time.png`.
+
+### Inventario de wireframes (verificado visualmente)
+
+| Wireframe | Pantalla / intención estructural | Estado |
+|---|---|---|
+| `Main menu (sidebar open).png` | Sidebar expandido: logo, ítem simple, grupo desplegable con sub-ítems, divisor, bloque usuario+rol, zona de logout, botón circular de colapso | **Implementado parcialmente** (Iteración 01) — faltan el grupo de navegación desplegable y el botón de colapso |
+| `Main menu (sidebar close).png` | Rail colapsado con solo iconos + avatares al pie | **Pendiente en desktop** — hoy solo existe el drawer off-canvas de mobile |
+| `Dashboard.png` | Card resumen (cifra destacada + 2 indicadores con (i) + donut) y tabla inferior | **Implementado** (Iteración 03) |
+| `Dashboard inventory in real time.png` | Mapa de red de sucursales (nodos verde/azul/rojo conectados) + dos bloques informativos debajo | **Implementado** (Iteración 03) |
+| `inventary.png` | Tabla de productos: search, "Manage stock" (dropdown add stock / remove items), "+ New product", filtros/fecha/export, paginación | Pendiente |
+| `purchase.png` | Órdenes de compra: panel de filtros por estado + lista de tarjetas PO-00X con estado de envío | Pendiente |
+| `sales.png` | POS: buscador + grid de productos, carrito lateral con items, subtotal y descuento | Pendiente |
+| `transfers.png` | Formulario de transferencia con stepper, campos en dos columnas y tabla de ítems | Pendiente |
+| `transfers with popup.png` | Mismo formulario con modal de selección de ítems | Pendiente |
+
+**Orden de implementación recomendado:** Dashboard → Inventario → Compras → Transferencias → Ventas
+(flujo de usuario → dependencias → complejidad técnica).
+
+### Cambios realizados
+
+- Implementada la pantalla **Dashboard** completa en `/dashboard`, sustituyendo el placeholder de 4 KPIs vacíos.
+- Añadidos los primitivos base de shadcn/ui que faltaban según `DESIGN_SYSTEM.md`: `card`, `badge`, `table`, más `skeleton` y `tooltip`.
+- Creada la capa de datos mock del dashboard (tipos, mocks, fetchers y hooks de TanStack Query).
+- Añadidas utilidades de formato compartidas (`src/lib/format.ts`) para moneda COP, cantidades, porcentajes y fechas en `es-CO`.
+- Ampliado `src/App.test.tsx`: envoltura con `QueryClientProvider` y una prueba adicional de render de secciones.
+
+### Archivos creados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/components/ui/card.tsx` | Card base (shadcn new-york) con `rounded-lg` según design system |
+| `src/components/ui/badge.tsx` | Badge con variantes `default`, `secondary`, `destructive`, `warning`, `outline` |
+| `src/components/ui/table.tsx` | Tabla base con contenedor scrollable |
+| `src/components/ui/skeleton.tsx` | Bloque de carga animado |
+| `src/components/ui/tooltip.tsx` | Tooltip accesible sobre el primitive de Radix ya instalado |
+| `src/lib/format.ts` | Formateadores `es-CO`: moneda, compacto, número con signo, porcentaje, fecha/hora y tiempo relativo |
+| `src/features/dashboard/types.ts` | Tipos del dominio del dashboard (resumen, distribución, movimientos, nodos/enlaces/alertas de red) |
+| `src/features/dashboard/mocks/dashboard.mock.ts` | Datos de ejemplo aislados con la forma exacta de la respuesta esperada del API |
+| `src/features/dashboard/api/dashboard.api.ts` | Fetchers con latencia simulada; único punto a reemplazar al conectar el backend |
+| `src/features/dashboard/hooks/useDashboardQueries.ts` | `dashboardKeys` + hooks `useInventorySummary`, `useRecentMovements`, `useBranchNetwork` |
+| `src/features/dashboard/lib/branch-status.ts` | Etiquetas y estilos semánticos de estado de sucursal compartidos por mapa, leyenda y paneles |
+| `src/features/dashboard/components/InventorySummaryCard.tsx` | Card hero: valor total, tendencia, métricas, indicadores con tooltip y donut |
+| `src/features/dashboard/components/StockDistributionChart.tsx` | Donut de recharts + leyenda con unidades y porcentaje |
+| `src/features/dashboard/components/RecentMovementsCard.tsx` | Tabla de últimos movimientos de inventario |
+| `src/features/dashboard/components/BranchNetworkMap.tsx` | Mapa de red: curvas SVG + nodos HTML posicionados en porcentaje |
+| `src/features/dashboard/components/StockAlertsPanel.tsx` | Lista de alertas de stock con severidad y barra de cobertura |
+| `src/features/dashboard/components/BranchDetailPanel.tsx` | Detalle de la sede seleccionada en el mapa |
+| `src/features/dashboard/components/BranchNetworkCard.tsx` | Sección "Red de inventario en tiempo real" (mapa + leyenda + paneles) |
+| `src/features/dashboard/components/SectionState.tsx` | `ErrorState` y `EmptyState` reutilizables |
+
+### Archivos modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `src/features/dashboard/pages/Dashboard.tsx` | Reescritura: encabezado + composición de las tres secciones. La página no contiene lógica de datos |
+| `src/App.test.tsx` | `QueryClientProvider` en el render, aserción por rol para el `h1` y prueba de las secciones cargadas |
+
+### Traducción de los wireframes al dominio
+
+`Dashboard.png` es una plantilla financiera genérica (`$PRICE`, `Expenses`, `Net income`, tabla `Client/Date`). Se conservó su estructura y se sustituyó el contenido por el dominio de inventario:
+
+| Elemento del wireframe | Implementación |
+|---|---|
+| Label "text" + `$PRICE` | "Valor total del inventario" + valor consolidado en COP con variación porcentual |
+| `Expenses` / `Net income` con iconos (i) | "Entradas (30 días)" / "Salidas (30 días)" con tooltip explicativo |
+| Donut con porcentajes | Distribución del valor del inventario por categoría de producto |
+| Tabla `Client / Date / Optional` | Últimos movimientos: producto+SKU, tipo, sucursal/ruta, cantidad con signo, fecha |
+| Mapa de nodos verde/azul/rojo | Red de sucursales: verde operativa, azul bodega central, rojo stock crítico, con rutas de reabastecimiento punteadas |
+| Dos bloques bajo el mapa | Izquierda: alertas de stock de la red. Derecha: detalle de la sede seleccionada |
+
+### Decisiones importantes
+
+1. **Los dos wireframes de Dashboard viven en la misma ruta `/dashboard`**, como secciones sucesivas. El sidebar tiene un único ítem "Dashboard" y ambos wireframes muestran la misma pantalla; separarlos habría exigido tocar la navegación sin respaldo en los wireframes.
+2. **Mapa de red con SVG + CSS, sin librería de grafos**. Las curvas son `path` cúbicos en un sistema de coordenadas 0–100 con `vectorEffect="non-scaling-stroke"`; los nodos son botones HTML posicionados en porcentaje, lo que permite iconos de lucide, foco por teclado y `aria-label`. No se añadió ninguna dependencia.
+3. **Cero dependencias nuevas**: recharts, radix-ui, TanStack Query y lucide ya estaban instalados. Los primitivos de shadcn se escribieron a mano siguiendo el estilo `new-york` ya configurado, evitando que el CLI vuelva a crear rutas incorrectas (problema de la Iteración 01).
+4. **Colores semánticos de estado fuera de la paleta de marca**. `DESIGN_SYSTEM.md` no define tokens de éxito/advertencia/peligro y el propio wireframe usa verde/azul/rojo para el estado de las sedes. Se usan `emerald` (positivo), `amber` (advertencia), `sky` (bodega central) y el token `destructive` (crítico); el verde de marca `--primary` se mantiene en el relleno de los nodos operativos, la primera porción del donut y el chip de tendencia.
+5. **Datos mock detrás de TanStack Query**, no incrustados en los componentes: los estados de carga y error son reales y conectar el backend solo implica reemplazar el cuerpo de `dashboard.api.ts`.
+6. **La sección de red se refresca sola cada 60 s** (`refetchInterval`) para sostener la promesa de "tiempo real"; además cada sección tiene su botón de actualización manual.
+7. **`badgeVariants` no se exporta** para no introducir un warning nuevo de `react(only-export-components)`.
+
+### Responsive
+
+| Breakpoint | Comportamiento del Dashboard |
+|------------|------------------------------|
+| Desktop (≥1024px) | Card hero en dos columnas (cifras + donut con leyenda), tabla completa, mapa a ancho total, alertas y detalle en dos columnas |
+| Tablet (768–1023px) | Hero apilado con donut y leyenda en fila, tabla completa, paneles del mapa en una columna |
+| Mobile (<640px) | Todo en una columna; el donut pasa a ancho completo con la leyenda debajo; la tabla oculta "Sucursal/ruta" y "Fecha" y conserva scroll horizontal; el mapa se desplaza en horizontal con indicación visible |
+
+### Accesibilidad
+
+- Jerarquía de encabezados `h1` → `h2` (títulos de card) → `h3` (subsecciones del mapa), con `aria-labelledby` en las secciones.
+- Donut expuesto como `role="img"` con `aria-label` que enumera categorías y porcentajes; la leyenda visible funciona como alternativa textual.
+- Nodos del mapa como `<button>` con `aria-pressed` y `aria-label` que incluye nombre, estado y unidades.
+- Barras de cobertura de alertas con `role="progressbar"` y `aria-valuenow/min/max`.
+- Tooltips de los indicadores accionables por teclado (`TooltipTrigger` con `aria-label`).
+- Estados de error con `role="alert"`; botones de solo icono con `aria-label`.
+- Cobertura de estados: `default`, `hover`, `focus-visible`, `disabled` (botones de refresco mientras cargan), `loading` (skeletons), `error` (con reintento) y `empty` (resumen, tabla, alertas y red).
+
+### Validación
+
+- **TypeScript**: `npx tsc -b` sin errores.
+- **Build de producción**: `npm run build` exitoso. El chunk lazy `Dashboard` pesa 408 kB (124 kB gzip) por recharts; al estar en carga diferida no afecta al bundle inicial.
+- **Lint**: `npm run lint` mantiene los 11 warnings preexistentes (`routes/index.tsx`, `button.tsx`, `AuthContext.tsx`). Ningún warning nuevo.
+- **Tests**: 2/2 en verde (`vitest run`).
+- **Revisión visual**: la pantalla se inspeccionó en 1440px, 1024px y 390px, y en los estados cargado, cargando, vacío y de error, comparándola con la intención estructural de ambos wireframes.
+
+### Pendientes
+
+- **Sidebar**: estado colapsado en desktop y grupo de navegación desplegable (`Main menu` open/close) siguen sin implementar.
+- **Documentación de origen**: `docs/` no contiene los RF/CU ni los diagramas (ER, arquitectura) que la especificación menciona. El dominio del Dashboard se derivó del enunciado de la iteración; conviene incorporar esos documentos antes de Inventario.
+- **Backend**: reemplazar `dashboard.api.ts` por llamadas reales con `apiClient`.
+- **Filtro por sucursal**: el selector del sidebar aún no filtra los datos del dashboard.
+- **Chunk de recharts**: evaluar `manualChunks` si más pantallas incorporan gráficos.
+- Pantallas pendientes: Inventario, Compras, Ventas y Transferencias (con su modal).
+
+### Siguiente paso sugerido
+
+**Inventario** (`inventary.png`): tabla de productos con búsqueda, filtros, exportación, paginación y acciones de stock. Reutiliza los primitivos `table`, `badge` y `card` introducidos en esta iteración y es la base de datos que consumen Compras, Ventas y Transferencias.
+
+---
+
 ## Iteración 02 — Login, flujo de autenticación y análisis de wireframes
 
 ### Objetivo
