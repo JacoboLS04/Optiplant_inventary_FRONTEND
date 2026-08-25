@@ -12,12 +12,15 @@ const Transferencias = lazy(
   () => import("@/features/transferencias/pages/Transferencias")
 );
 const AppLayout = lazy(() => import("@/components/layout/AppLayout"));
+const ProtectedRoute = lazy(
+  () => import("@/components/layout/ProtectedRoute")
+);
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-screen items-center justify-center bg-background">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       }
@@ -40,7 +43,9 @@ export const router = createBrowserRouter([
     path: "/",
     element: (
       <SuspenseWrapper>
-        <AppLayout />
+        <ProtectedRoute>
+          <AppLayout />
+        </ProtectedRoute>
       </SuspenseWrapper>
     ),
     children: [
