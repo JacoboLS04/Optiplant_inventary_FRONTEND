@@ -24,7 +24,7 @@ import { formatDateTime, formatSignedNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useRecentMovements } from "../hooks/useDashboardQueries";
 import type { InventoryMovement, MovementType } from "../types";
-import { EmptyState, ErrorState } from "./SectionState";
+import { EmptyState, ErrorState } from "@/components/shared/SectionState";
 
 const MOVEMENT_LABELS: Record<MovementType, string> = {
   entrada: "Entrada",

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { StockAlert } from "../types";
-import { EmptyState } from "./SectionState";
+import { EmptyState } from "@/components/shared/SectionState";
 
 interface StockAlertsPanelProps {
   alerts: StockAlert[];

@@ -49,6 +49,7 @@ interface EmptyStateProps {
   icon: LucideIcon;
   title: string;
   description?: string;
+  action?: React.ReactNode;
   className?: string;
 }
 
@@ -56,6 +57,7 @@ export function EmptyState({
   icon: Icon,
   title,
   description,
+  action,
   className,
 }: EmptyStateProps) {
   return (
@@ -74,6 +76,7 @@ export function EmptyState({
           <p className="text-sm text-muted-foreground">{description}</p>
         ) : null}
       </div>
+      {action}
     </div>
   );
 }

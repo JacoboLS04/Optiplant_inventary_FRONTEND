@@ -1,0 +1,35 @@
+export type EstadoStock = "disponible" | "bajo" | "critico" | "agotado";
+
+export interface Producto {
+  id: string;
+  sku: string;
+  nombre: string;
+  categoriaId: string;
+  categoria: string;
+  sucursalId: string;
+  sucursal: string;
+  stock: number;
+  stockMinimo: number;
+  precioUnitario: number;
+  estado: EstadoStock;
+  actualizadoEn: string;
+}
+
+export type TipoAjuste = "entrada" | "salida";
+
+export interface AjusteStockPayload {
+  productoId: string;
+  tipo: TipoAjuste;
+  cantidad: number;
+  motivo: string;
+}
+
+export interface NuevoProductoPayload {
+  sku: string;
+  nombre: string;
+  categoriaId: string;
+  sucursalId: string;
+  stock: number;
+  stockMinimo: number;
+  precioUnitario: number;
+}

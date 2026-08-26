@@ -17,7 +17,7 @@ import { useBranchNetwork } from "../hooks/useDashboardQueries";
 import type { BranchNetworkData } from "../types";
 import { BranchDetailPanel } from "./BranchDetailPanel";
 import { BranchNetworkMap } from "./BranchNetworkMap";
-import { EmptyState, ErrorState } from "./SectionState";
+import { EmptyState, ErrorState } from "@/components/shared/SectionState";
 import { StockAlertsPanel } from "./StockAlertsPanel";
 
 const LEGEND = [

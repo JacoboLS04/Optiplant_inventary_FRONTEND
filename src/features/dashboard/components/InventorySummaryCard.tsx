@@ -34,7 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useInventorySummary } from "../hooks/useDashboardQueries";
 import type { InventorySummaryData } from "../types";
-import { EmptyState, ErrorState } from "./SectionState";
+import { EmptyState, ErrorState } from "@/components/shared/SectionState";
 import { StockDistributionChart } from "./StockDistributionChart";
 
 interface IndicatorProps {

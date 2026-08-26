@@ -20,6 +20,12 @@ const dateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   minute: "2-digit",
 });
 
+const dateFormatter = new Intl.DateTimeFormat("es-CO", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
 const timeFormatter = new Intl.DateTimeFormat("es-CO", {
   hour: "2-digit",
   minute: "2-digit",
@@ -60,6 +66,10 @@ export function formatRelativeTime(iso: string): string {
 
 export function formatDateTime(iso: string): string {
   return dateTimeFormatter.format(new Date(iso));
+}
+
+export function formatDate(iso: string): string {
+  return dateFormatter.format(new Date(iso));
 }
 
 export function formatTime(iso: string): string {

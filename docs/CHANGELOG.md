@@ -2,6 +2,77 @@
 
 ---
 
+## Iteración 04 — Inventario, Compras, Transferencias y Ventas
+
+### Objetivo
+
+Implementar en una sola ejecución los cuatro módulos pendientes del inventario de wireframes
+(`inventary.png`, `purchase.png`, `transfers.png` + `transfers with popup.png`, `sales.png`),
+creando primero los componentes compartidos que se repiten entre pantallas.
+
+### Componentes base compartidos (creados antes de los módulos)
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/components/ui/dialog.tsx` | Modal accesible (Radix Dialog) — usado por transferencias, inventario y ventas |
+| `src/components/ui/select.tsx` | Select accesible (Radix Select) para filtros y formularios |
+| `src/components/ui/dropdown-menu.tsx` | Menú de acciones ("Gestionar stock") |
+| `src/components/ui/label.tsx`, `textarea.tsx` | Primitivos de formulario faltantes |
+| `src/components/shared/PageHeader.tsx` | Título + descripción + acciones, idéntico en las cuatro pantallas |
+| `src/components/shared/SearchInput.tsx` | Búsqueda con icono y botón de limpiar |
+| `src/components/shared/DataTable.tsx` | Tabla genérica por columnas con loading / error / empty |
+| `src/components/shared/TablePagination.tsx` | "Mostrando X–Y de N" + navegación de páginas |
+| `src/components/shared/StatusBadge.tsx` | Tono semántico único (success/warning/danger/info/neutral) para todos los estados |
+| `src/components/shared/Stepper.tsx` | Pasos numerados: asistente de transferencia y seguimiento de envío en compras |
+| `src/components/shared/FormField.tsx` | Label + control + error/hint |
+| `src/components/shared/SectionState.tsx` | `ErrorState` / `EmptyState` — **movidos** desde `features/dashboard/components/` |
+| `src/features/catalogos/` | Sucursales y categorías (types/mocks/api/hooks) consumidas por los cuatro módulos |
+
+Además se añadió la variante `info` a `badge` y el formateador `formatDate` a `lib/format.ts`.
+
+### Módulos implementados
+
+Todos siguen el patrón de `dashboard/`: `types → mocks → api → hooks (TanStack Query) → components → page`.
+
+- **Inventario** (`/inventario`): tabla de 24 productos con búsqueda por nombre/SKU, filtros por
+  categoría, sucursal, estado de stock y fecha de actualización, exportación CSV de lo filtrado,
+  paginación de 10, diálogo de nuevo producto y diálogo de entrada/salida de stock.
+  El estado de stock se deriva de `stock` vs `stockMinimo` (`lib/estado-stock.ts`).
+- **Compras** (`/compras`): panel lateral de estados con conteos + filtro por sucursal de destino,
+  búsqueda por código/proveedor y tarjetas `PO-00X` con proveedor, destino, fechas, total,
+  seguimiento de envío (stepper) e ítems desplegables.
+- **Transferencias** (`/transferencias`): asistente de 3 pasos (origen y destino → productos →
+  revisión). El modal de selección de ítems lista las existencias reales de la sucursal de origen;
+  las cantidades se ajustan en la tabla y se validan contra el stock disponible.
+- **Ventas** (`/ventas`): catálogo con búsqueda y filtros + carrito lateral con control de
+  cantidades, descuento porcentual en modal y registro de la venta.
+
+### Decisiones no triviales
+
+- **Almacén mock mutable**: `inventario/mocks/inventario.mock.ts` es un array mutable; las
+  mutaciones de `api/` (crear producto, ajustar stock, registrar venta) escriben ahí para que la UI
+  se comporte como lo hará contra Spring Boot. Ventas y Transferencias derivan sus datos de ese
+  mismo almacén, igual que el backend consultará `Existencia`.
+- **Formularios sin datos precargados**: todos los campos inician vacíos; los mocks solo alimentan
+  catálogos y listados, nunca valores de formulario.
+- **Una venta = una sucursal**: al intentar mezclar sedes en el carrito se muestra un aviso.
+- **Sin dependencias nuevas**: los primitivos se escribieron sobre `radix-ui`, ya instalado.
+
+### Pendientes reales
+
+- Compras y Transferencias no tienen listado histórico ni creación de orden de compra: los
+  wireframes no los cubren; requieren definición funcional.
+- Transferir no mueve todavía existencias entre sucursales (el backend debe generar los dos
+  movimientos); la venta sí descuenta stock porque ocurre en una sola sede.
+- El selector de sucursal del sidebar aún no filtra el contenido de las pantallas.
+
+### Validación
+
+`tsc` sin errores · build de producción correcto · lint sin warnings nuevos (11 preexistentes) ·
+tests en verde · revisado en 1440 / 1024 / 390 px.
+
+---
+
 ## Iteración 03 — Inventario de wireframes (revisión visual) y Dashboard
 
 ### Objetivo
