@@ -30,3 +30,32 @@ export function etapaActual(estado: EstadoOrdenCompra): number {
   const indice = ETAPAS_ENVIO.findIndex((etapa) => etapa.id === estado);
   return indice === -1 ? 0 : indice;
 }
+
+/** Acciones de cambio de estado que el backend acepta según el estado actual
+ *  (mapeadas de la máquina de estados: BORRADOR -> ENVIADA -> EN_TRANSITO ->
+ *  RECIBIDA, y CANCELADA permitida desde BORRADOR/ENVIADA). */
+export type AccionOrden =
+  | "enviar"
+  | "marcarEnTransito"
+  | "marcarRecibida"
+  | "cancelar"
+  | "registrarRecepcion";
+
+export const ACCIONES_DISPONIBLES: Record<
+  EstadoOrdenCompra,
+  AccionOrden[]
+> = {
+  borrador: ["enviar", "cancelar"],
+  enviada: ["marcarEnTransito", "cancelar", "registrarRecepcion"],
+  en_transito: ["marcarRecibida", "registrarRecepcion"],
+  recibida: [],
+  cancelada: [],
+};
+
+/** Destino de cada acción de cambio de estado. */
+export const DESTINO_ACCION: Partial<Record<AccionOrden, EstadoOrdenCompra>> = {
+  enviar: "enviada",
+  marcarEnTransito: "en_transito",
+  marcarRecibida: "recibida",
+  cancelar: "cancelada",
+};

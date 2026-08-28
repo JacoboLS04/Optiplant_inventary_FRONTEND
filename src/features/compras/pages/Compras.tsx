@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { EmptyState, ErrorState } from "@/components/shared/SectionState";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/format";
 import {
   FiltrosCompras,
   type FiltrosComprasValue,
 } from "../components/FiltrosCompras";
+import { CrearOrdenCompraDialog } from "../components/CrearOrdenCompraDialog";
 import { OrdenCompraCard } from "../components/OrdenCompraCard";
 import { useOrdenesCompra } from "../hooks/useCompras";
 import { ESTADO_ORDEN_LABEL } from "../lib/estado-orden";
@@ -30,6 +32,7 @@ export default function Compras() {
 
   const [busqueda, setBusqueda] = useState("");
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
+  const [crearAbierto, setCrearAbierto] = useState(false);
 
   const conteoPorEstado = useMemo(() => {
     return ordenes.reduce(
@@ -61,6 +64,17 @@ export default function Compras() {
       <PageHeader
         title="Órdenes de compra"
         description="Seguimiento del abastecimiento solicitado a proveedores."
+        actions={
+          <Button type="button" onClick={() => setCrearAbierto(true)}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nueva orden
+          </Button>
+        }
+      />
+
+      <CrearOrdenCompraDialog
+        open={crearAbierto}
+        onOpenChange={setCrearAbierto}
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] lg:items-start">

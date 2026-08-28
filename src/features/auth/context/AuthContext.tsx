@@ -5,6 +5,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import apiClient from "@/api/client";
 
 interface AuthUser {
   name: string;
@@ -21,22 +22,62 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(null);
+const TOKEN_KEY = "token";
+const USER_KEY = "optiplant:user";
 
-  const login = useCallback(async (email: string, _password: string) => {
-    // Mock: simula latencia de red
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsAuthenticated(true);
-    setUser({
-      name: "Administrador",
+interface LoginResponse {
+  token: string;
+  tipo: string;
+  usuarioId: string | number;
+  email: string;
+  nombre: string;
+  rol: string;
+}
+
+function readStoredUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+function readStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  // Restaura la sesión persistida al inicializar (refrescar la página).
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    () => Boolean(readStoredToken())
+  );
+  const [user, setUser] = useState<AuthUser | null>(() => readStoredUser());
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { data } = await apiClient.post<LoginResponse>("/v1/auth/login", {
       email,
-      role: "Administrador",
+      password,
     });
+
+    // El interceptor de `apiClient` lee el token desde esta misma clave.
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(
+      USER_KEY,
+      JSON.stringify({
+        name: data.nombre,
+        email: data.email,
+        role: data.rol,
+      })
+    );
+
+    setIsAuthenticated(true);
+    setUser({ name: data.nombre, email: data.email, role: data.rol });
   }, []);
 
   const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setIsAuthenticated(false);
     setUser(null);
   }, []);

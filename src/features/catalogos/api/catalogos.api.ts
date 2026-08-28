@@ -1,23 +1,22 @@
-import { categoriasMock, sucursalesMock } from "../mocks/catalogos.mock";
-import type { Categoria, Sucursal } from "../types";
+import apiClient from "@/api/client";
+import type { Categoria, Sucursal, UnidadMedida } from "../types";
 
 /**
- * Único punto a reemplazar por llamadas reales de `apiClient` cuando el
- * backend esté conectado.
+ * Punto único de acceso a los catálogos base. Reemplaza los mocks por
+ * llamadas reales al backend. Estos endpoints devuelven listas simples
+ * sin paginar.
  */
 
-const MOCK_LATENCY_MS = 300;
-
-function resolveWithLatency<T>(data: T): Promise<T> {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(data), MOCK_LATENCY_MS);
-  });
-}
-
 export function fetchSucursales(): Promise<Sucursal[]> {
-  return resolveWithLatency(sucursalesMock);
+  return apiClient.get<Sucursal[]>("/v1/sucursales").then((res) => res.data);
 }
 
 export function fetchCategorias(): Promise<Categoria[]> {
-  return resolveWithLatency(categoriasMock);
+  return apiClient.get<Categoria[]>("/v1/categorias").then((res) => res.data);
+}
+
+export function fetchUnidadesMedida(): Promise<UnidadMedida[]> {
+  return apiClient
+    .get<UnidadMedida[]>("/v1/unidades-medida")
+    .then((res) => res.data);
 }
