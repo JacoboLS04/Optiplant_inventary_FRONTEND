@@ -1,4 +1,4 @@
-import { productosStore } from "@/features/inventario/mocks/inventario.mock";
+import apiClient from "@/api/client";
 import type {
   NuevaTransferenciaPayload,
   ProductoDisponible,
@@ -6,52 +6,139 @@ import type {
 } from "../types";
 
 /**
- * Único punto a reemplazar por llamadas reales de `apiClient`. Los productos
- * disponibles se derivan del mismo almacén de existencias que usa Inventario,
- * igual que hará el backend al consultar `Existencia` por sucursal.
+ * Único punto de acceso a Transferencias contra el backend real.
+ *
+ * - `fetchProductosDisponibles`: `GET /existencias?sucursalId=...` (stock > 0
+ *   en la sucursal de origen) con la categoría resuelta desde `/productos`.
+ * - `crearTransferencia`: `POST /transferencias` (modelo multi-item: cabecera
+ *   + líneas de producto).
+ *
+ * El backend trabaja con identificadores numéricos; la UI usa cadenas, por lo
+ * que cada función traduce los `id`/`sucursalId`/`productoId`.
  */
 
-const MOCK_LATENCY_MS = 400;
-
-function resolveWithLatency<T>(data: T): Promise<T> {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(data), MOCK_LATENCY_MS);
-  });
+/** Envelope de paginación que devuelve el backend Spring. */
+interface PageEnvelope<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }
 
-export function fetchProductosDisponibles(
+/** DTO real de `GET /existencias`. */
+interface ExistenciaDto {
+  id: number;
+  productoId?: number;
+  sku?: string;
+  nombreProducto?: string;
+  sucursalId?: number;
+  cantidadDisponible?: number;
+}
+
+/** DTO real de `GET /productos` (para resolver la categoría por producto). */
+interface ProductoDto {
+  id?: number;
+  categoriaNombre?: string;
+}
+
+/** DTO real de `GET /transferencias` y `POST /transferencias`. */
+interface TransferenciaDto {
+  id: number;
+  codigo: string;
+  sucursalOrigenId?: number;
+  sucursalDestinoId?: number;
+  nombreUsuarioSolicitante?: string;
+  estado?: string;
+  fechaSolicitud?: string;
+  fechaDespacho?: string;
+  totalUnidades: number;
+  lineas: Array<{
+    productoId: number;
+    cantidadSolicitada: number;
+  }>;
+}
+
+const PAGE_SIZE = 100;
+
+function getId(value: number | null | undefined): string {
+  return value === null || value === undefined ? "" : String(value);
+}
+
+async function fetchAllPages<T>(
+  url: string,
+  params?: Record<string, unknown>
+): Promise<T[]> {
+  const primera = await apiClient.get<PageEnvelope<T>>(url, {
+    params: { page: 0, size: PAGE_SIZE, ...params },
+  });
+  const { content, totalPages } = primera.data;
+  if (totalPages <= 1) return content;
+
+  const resto = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, i) =>
+      apiClient.get<PageEnvelope<T>>(url, {
+        params: { page: i + 1, size: PAGE_SIZE, ...params },
+      })
+    )
+  );
+  return [...content, ...resto.flatMap((res) => res.data.content)];
+}
+
+async function fetchCategoriasPorProducto(): Promise<Map<number, string>> {
+  const list = await fetchAllPages<ProductoDto>("/v1/productos");
+  return new Map(
+    list
+      .filter((p) => p.id !== undefined)
+      .map((p) => [p.id as number, p.categoriaNombre ?? "—"])
+  );
+}
+
+export async function fetchProductosDisponibles(
   sucursalId: string
 ): Promise<ProductoDisponible[]> {
-  const disponibles = productosStore
-    .filter(
-      (producto) => producto.sucursalId === sucursalId && producto.stock > 0
-    )
-    .map<ProductoDisponible>((producto) => ({
-      productoId: producto.id,
-      sku: producto.sku,
-      nombre: producto.nombre,
-      categoria: producto.categoria,
-      stockDisponible: producto.stock,
-    }));
+  const [existencias, categorias] = await Promise.all([
+    fetchAllPages<ExistenciaDto>("/v1/existencias", {
+      sucursalId: Number(sucursalId),
+    }),
+    fetchCategoriasPorProducto(),
+  ]);
 
-  return resolveWithLatency(disponibles);
+  return existencias
+    .filter((dto) => Number(dto.cantidadDisponible ?? 0) > 0)
+    .map<ProductoDisponible>((dto) => {
+      const productoId = dto.productoId ?? dto.id;
+      return {
+        productoId: getId(productoId),
+        sku: dto.sku ?? "",
+        nombre: dto.nombreProducto ?? "",
+        categoria: categorias.get(Number(productoId)) ?? "—",
+        stockDisponible: Number(dto.cantidadDisponible ?? 0),
+      };
+    });
 }
 
-let consecutivo = 0;
-
-export function crearTransferencia(
+export async function crearTransferencia(
   payload: NuevaTransferenciaPayload
 ): Promise<Transferencia> {
-  consecutivo += 1;
-
-  return resolveWithLatency({
-    id: `TRF-${String(consecutivo).padStart(3, "0")}`,
-    codigo: `TR-${String(consecutivo).padStart(4, "0")}`,
-    sucursalOrigenId: payload.sucursalOrigenId,
-    sucursalDestinoId: payload.sucursalDestinoId,
-    estado: "en_transito",
-    fechaEnvio: payload.fechaEnvio,
-    responsable: payload.responsable,
-    totalUnidades: payload.items.reduce((acc, item) => acc + item.cantidad, 0),
+  const { data } = await apiClient.post<TransferenciaDto>("/v1/transferencias", {
+    sucursalOrigenId: Number(payload.sucursalOrigenId),
+    sucursalDestinoId: Number(payload.sucursalDestinoId),
+    transportista: payload.transportador.trim() || undefined,
+    lineas: payload.items.map((item) => ({
+      productoId: Number(item.productoId),
+      cantidadSolicitada: item.cantidad,
+    })),
   });
+
+  return {
+    id: getId(data.id),
+    codigo: data.codigo,
+    sucursalOrigenId: getId(data.sucursalOrigenId),
+    sucursalDestinoId: getId(data.sucursalDestinoId),
+    estado: ("en_transito" as Transferencia["estado"]),
+    fechaEnvio: data.fechaDespacho ?? data.fechaSolicitud ?? "",
+    responsable: data.nombreUsuarioSolicitante ?? "",
+    totalUnidades: data.totalUnidades,
+  };
 }
