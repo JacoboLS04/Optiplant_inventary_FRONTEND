@@ -110,6 +110,7 @@ function toProducto(
     stockMinimo,
     precioUnitario: Number(dto.precio ?? 0),
     estado: (dto.estadoStock ?? "disponible") as Producto["estado"],
+    activo: (prod?.estado ?? "activo") !== "inactivo",
     actualizadoEn: dto.updatedAt ?? new Date().toISOString(),
   };
 }
@@ -198,8 +199,13 @@ export async function crearProducto(
     stockMinimo: payload.stockMinimo,
     precioUnitario: payload.precioUnitario,
     estado: "agotado",
+    activo: true,
     actualizadoEn: new Date().toISOString(),
   };
+}
+
+export async function inactivarProducto(id: string): Promise<void> {
+  await apiClient.patch(`/v1/productos/${id}/estado`);
 }
 
 export async function registrarAjusteStock(
@@ -214,11 +220,16 @@ export async function registrarAjusteStock(
     throw new Error("No se encontró la existencia del producto seleccionado");
   }
 
-  // El backend usa "ingreso"/"retiro"; el usuario se resuelve del token.
+  // El backend usa "ingreso"/"retiro"/"merma"; el usuario se resuelve del token.
   await apiClient.post("/v1/movimientos-inventario", {
     productoId: Number(payload.productoId),
     sucursalId: fila.sucursalId,
-    tipo: payload.tipo === "entrada" ? "ingreso" : "retiro",
+    tipo:
+      payload.tipo === "entrada"
+        ? "ingreso"
+        : payload.tipo === "merma"
+          ? "merma"
+          : "retiro",
     cantidad: payload.cantidad,
     motivo: payload.motivo,
   });

@@ -3,14 +3,19 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { CarritoVenta } from "../components/CarritoVenta";
 import { CatalogoProductos } from "../components/CatalogoProductos";
 import { DescuentoDialog } from "../components/DescuentoDialog";
+import { HistorialVentas } from "../components/HistorialVentas";
 import { useRegistrarVenta } from "../hooks/useVentas";
 import type { LineaVenta, ProductoVenta } from "../types";
 
+type VistaVentas = "nueva" | "historial";
+
 export default function Ventas() {
   const registrarVenta = useRegistrarVenta();
+  const [vista, setVista] = useState<VistaVentas>("nueva");
 
   const [lineas, setLineas] = useState<LineaVenta[]>([]);
   const [descuento, setDescuento] = useState(0);
@@ -120,41 +125,77 @@ export default function Ventas() {
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6">
       <PageHeader
-        title="Venta"
-        description="Registro de ventas sobre las existencias disponibles."
+        title="Ventas"
+        description="Registro de ventas y comprobantes sobre las existencias."
+        actions={
+          <div className="inline-flex rounded-lg border bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setVista("nueva")}
+              aria-pressed={vista === "nueva"}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                vista === "nueva"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Nueva venta
+            </button>
+            <button
+              type="button"
+              onClick={() => setVista("historial")}
+              aria-pressed={vista === "historial"}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                vista === "historial"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Historial
+            </button>
+          </div>
+        }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
-        <CatalogoProductos
-          onAgregar={agregar}
-          cantidadesEnCarrito={cantidadesEnCarrito}
-        />
+      {vista === "historial" ? (
+        <HistorialVentas />
+      ) : (
+        <>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
+            <CatalogoProductos
+              onAgregar={agregar}
+              cantidadesEnCarrito={cantidadesEnCarrito}
+            />
 
-        <CarritoVenta
-          lineas={lineas}
-          subtotal={subtotal}
-          descuentoPorcentaje={descuento}
-          total={total}
-          sucursalNombre={sucursalNombre}
-          isSubmitting={registrarVenta.isPending}
-          onCantidadChange={cambiarCantidad}
-          onQuitar={(productoId) =>
-            setLineas((actuales) =>
-              actuales.filter((linea) => linea.productoId !== productoId)
-            )
-          }
-          onAbrirDescuento={() => setDialogoDescuento(true)}
-          onRegistrar={() => void registrar()}
-          onVaciar={vaciar}
-        />
-      </div>
+            <CarritoVenta
+              lineas={lineas}
+              subtotal={subtotal}
+              descuentoPorcentaje={descuento}
+              total={total}
+              sucursalNombre={sucursalNombre}
+              isSubmitting={registrarVenta.isPending}
+              onCantidadChange={cambiarCantidad}
+              onQuitar={(productoId) =>
+                setLineas((actuales) =>
+                  actuales.filter((linea) => linea.productoId !== productoId)
+                )
+              }
+              onAbrirDescuento={() => setDialogoDescuento(true)}
+              onRegistrar={() => void registrar()}
+              onVaciar={vaciar}
+            />
+          </div>
 
-      <DescuentoDialog
-        open={dialogoDescuento}
-        onOpenChange={setDialogoDescuento}
-        descuentoActual={descuento}
-        onAplicar={setDescuento}
-      />
+          <DescuentoDialog
+            open={dialogoDescuento}
+            onOpenChange={setDialogoDescuento}
+            descuentoActual={descuento}
+            onAplicar={setDescuento}
+          />
+        </>
+      )}
     </div>
   );
 }

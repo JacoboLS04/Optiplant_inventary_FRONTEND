@@ -31,7 +31,31 @@ export interface Venta {
   id: string;
   codigo: string;
   sucursalId: string;
+  nombreSucursal: string;
+  usuarioId: string;
+  nombreUsuario: string;
+  descuentoPorcentaje: number;
+  subtotal: number;
   total: number;
   unidades: number;
   fecha: string;
+  lineas: LineaVentaHistorial[];
+}
+
+export interface LineaVentaHistorial {
+  id: string;
+  productoId: string;
+  sku: string;
+  nombreProducto: string;
+  cantidad: number;
+  precioUnitario: number;
+  descuento: number;
+  subtotal: number;
+}
+
+export interface FiltrosVentas {
+  sucursalId?: string;
+  busqueda?: string;
+  desde?: string;
+  hasta?: string;
 }

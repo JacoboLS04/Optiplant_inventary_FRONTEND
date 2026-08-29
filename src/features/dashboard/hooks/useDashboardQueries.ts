@@ -4,6 +4,8 @@ import {
   fetchBranchNetwork,
   fetchInventorySummary,
   fetchRecentMovements,
+  fetchRotacion,
+  fetchVentasMensuales,
 } from "../api/dashboard.api";
 
 export const dashboardKeys = {
@@ -11,6 +13,8 @@ export const dashboardKeys = {
   summary: () => [...dashboardKeys.all, "summary"] as const,
   movements: () => [...dashboardKeys.all, "movements"] as const,
   network: () => [...dashboardKeys.all, "network"] as const,
+  rotacion: () => [...dashboardKeys.all, "rotacion"] as const,
+  ventasMensuales: () => [...dashboardKeys.all, "ventas-mensuales"] as const,
 };
 
 export function useInventorySummary() {
@@ -34,5 +38,19 @@ export function useBranchNetwork() {
     // El mapa de red se presenta como vista "en tiempo real".
     staleTime: 30_000,
     refetchInterval: 60_000,
+  });
+}
+
+export function useRotacion() {
+  return useQuery({
+    queryKey: dashboardKeys.rotacion(),
+    queryFn: fetchRotacion,
+  });
+}
+
+export function useVentasMensuales() {
+  return useQuery({
+    queryKey: dashboardKeys.ventasMensuales(),
+    queryFn: fetchVentasMensuales,
   });
 }

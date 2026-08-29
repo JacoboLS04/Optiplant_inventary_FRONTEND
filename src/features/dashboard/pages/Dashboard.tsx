@@ -1,8 +1,16 @@
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { normalizarRol } from "@/lib/roles";
 import { BranchNetworkCard } from "../components/BranchNetworkCard";
 import { InventorySummaryCard } from "../components/InventorySummaryCard";
 import { RecentMovementsCard } from "../components/RecentMovementsCard";
+import { RotacionCard } from "../components/RotacionCard";
+import { VentasMensualesCard } from "../components/VentasMensualesCard";
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  // RF-063/064: la comparativa entre sucursales es solo para ADMINISTRADOR.
+  const esAdministrador = normalizarRol(user?.role) === "ADMINISTRADOR";
+
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6">
       <header className="space-y-1">
@@ -13,8 +21,10 @@ export default function Dashboard() {
       </header>
 
       <InventorySummaryCard />
+      <VentasMensualesCard />
       <RecentMovementsCard />
-      <BranchNetworkCard />
+      <RotacionCard />
+      {esAdministrador ? <BranchNetworkCard /> : null}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, MinusCircle, PackageSearch, Plus, PlusCircle } from "lucide-react";
+import { Archive, ChevronDown, MinusCircle, PackageSearch, Plus, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
@@ -18,14 +18,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatNumber, formatRelativeTime } from "@/lib/format";
+import { mensajeDeError } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
 import { AjusteStockDialog } from "../components/AjusteStockDialog";
+import { BajaProductoDialog } from "../components/BajaProductoDialog";
 import {
   FiltrosInventario,
   type FiltrosInventarioValue,
 } from "../components/FiltrosInventario";
 import { NuevoProductoDialog } from "../components/NuevoProductoDialog";
-import { useProductos } from "../hooks/useInventario";
+import { useInactivarProducto, useProductos } from "../hooks/useInventario";
 import { ESTADO_STOCK_LABEL, ESTADO_STOCK_TONE } from "../lib/estado-stock";
 import { exportarProductosCsv } from "../lib/exportar-csv";
 import type { Producto, TipoAjuste } from "../types";
@@ -125,12 +127,14 @@ const columnas: DataTableColumn<Producto>[] = [
 
 export default function Inventario() {
   const { data: productos = [], isPending, isError, refetch } = useProductos();
+  const inactivar = useInactivarProducto();
 
   const [busqueda, setBusqueda] = useState("");
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const [pagina, setPagina] = useState(1);
   const [dialogoProducto, setDialogoProducto] = useState(false);
   const [ajuste, setAjuste] = useState<TipoAjuste | null>(null);
+  const [productoEnBaja, setProductoEnBaja] = useState<Producto | null>(null);
 
   const filtrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -142,6 +146,7 @@ export default function Inventario() {
         producto.sku.toLowerCase().includes(termino);
 
       return (
+        producto.activo &&
         coincideTexto &&
         (filtros.categoriaId === "todas" ||
           producto.categoriaId === filtros.categoriaId) &&
@@ -179,6 +184,52 @@ export default function Inventario() {
     });
   };
 
+  const confirmarBaja = async () => {
+    if (!productoEnBaja) return;
+
+    const { id, nombre } = productoEnBaja;
+
+    try {
+      await inactivar.mutateAsync(id);
+      toast.success("Producto dado de baja", {
+        description: `${nombre} quedó marcado como inactivo y ya no puede usarse en nuevas operaciones.`,
+      });
+      setProductoEnBaja(null);
+    } catch (error) {
+      toast.error("No se pudo dar de baja el producto", {
+        description: mensajeDeError(error, "Inténtalo de nuevo en unos segundos."),
+      });
+    }
+  };
+
+  const columnasConAcciones = useMemo<DataTableColumn<Producto>[]>(
+    () => [
+      ...columnas,
+      {
+        id: "acciones",
+        header: "Acciones",
+        align: "right",
+        cell: (producto) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" size="icon-sm" aria-label={`Acciones de ${producto.nombre}`}>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{producto.nombre}</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => setProductoEnBaja(producto)}>
+                <Archive className="h-4 w-4" aria-hidden="true" />
+                Dar de baja
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    []
+  );
+
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6">
       <PageHeader
@@ -202,6 +253,10 @@ export default function Inventario() {
                 <DropdownMenuItem onSelect={() => setAjuste("salida")}>
                   <MinusCircle aria-hidden="true" />
                   Registrar salida
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setAjuste("merma")}>
+                  <Trash2 aria-hidden="true" />
+                  Registrar merma
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -233,7 +288,7 @@ export default function Inventario() {
           />
 
           <DataTable
-            columns={columnas}
+            columns={columnasConAcciones}
             rows={visibles}
             rowKey={(producto) => producto.id}
             isLoading={isPending}
@@ -285,6 +340,15 @@ export default function Inventario() {
         onOpenChange={(open) => setAjuste(open ? ajuste : null)}
         tipo={ajuste ?? "entrada"}
         productos={productos}
+      />
+
+      <BajaProductoDialog
+        producto={productoEnBaja}
+        onOpenChange={(open) => {
+          if (!open) setProductoEnBaja(null);
+        }}
+        onConfirmar={() => void confirmarBaja()}
+        isPending={inactivar.isPending}
       />
     </div>
   );

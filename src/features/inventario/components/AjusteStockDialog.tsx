@@ -81,7 +81,11 @@ export function AjusteStockDialog({
     });
 
     toast.success(
-      tipo === "entrada" ? "Entrada registrada" : "Salida registrada",
+      tipo === "entrada"
+        ? "Entrada registrada"
+        : tipo === "merma"
+          ? "Merma registrada"
+          : "Salida registrada",
       {
         description: `${producto.nombre}: ${formatNumber(producto.stock)} unidades disponibles.`,
       }
@@ -90,18 +94,25 @@ export function AjusteStockDialog({
   });
 
   const esEntrada = tipo === "entrada";
+  const esMerma = tipo === "merma";
 
   return (
     <Dialog open={open} onOpenChange={cerrar}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {esEntrada ? "Registrar entrada de stock" : "Registrar salida de stock"}
+            {esEntrada
+              ? "Registrar entrada de stock"
+              : esMerma
+                ? "Registrar merma"
+                : "Registrar salida de stock"}
           </DialogTitle>
           <DialogDescription>
             {esEntrada
               ? "Suma unidades a la existencia de un producto."
-              : "Descuenta unidades de la existencia de un producto."}
+              : esMerma
+                ? "Descuenta unidades de la existencia por pérdida, daño o caducidad."
+                : "Descuenta unidades de la existencia de un producto."}
           </DialogDescription>
         </DialogHeader>
 
@@ -183,6 +194,8 @@ export function AjusteStockDialog({
                 </>
               ) : esEntrada ? (
                 "Registrar entrada"
+              ) : esMerma ? (
+                "Registrar merma"
               ) : (
                 "Registrar salida"
               )}

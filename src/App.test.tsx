@@ -47,6 +47,57 @@ vi.mock("@/features/dashboard/api/dashboard.api", () => ({
     alerts: [],
     updatedAt: new Date().toISOString(),
   }),
+  fetchRotacion: async () => ({
+    periodoDias: 30,
+    totalUnidades: 12840,
+    altaDemanda: [
+      {
+        productoId: "1",
+        sku: "FRT-1525",
+        nombre: "Fertilizante triple 15 — 25 kg",
+        unidades: 520,
+        stockActual: 640,
+        rotacion: 0.8,
+      },
+    ],
+    bajaDemanda: [
+      {
+        productoId: "2",
+        sku: "SEM-0520",
+        nombre: "Semilla de lechuga crespa",
+        unidades: 0,
+        stockActual: 254,
+        rotacion: 0,
+      },
+    ],
+    updatedAt: new Date().toISOString(),
+  }),
+  fetchVentasMensuales: async () => ({
+    mesesConsiderados: 4,
+    totalPeriodo: 118500000,
+    meses: [
+      { anio: 2026, mes: 5, etiqueta: "may 2026", total: 24700000 },
+      { anio: 2026, mes: 6, etiqueta: "jun 2026", total: 28100000 },
+      { anio: 2026, mes: 7, etiqueta: "jul 2026", total: 30200000 },
+      { anio: 2026, mes: 8, etiqueta: "ago 2026", total: 35500000 },
+    ],
+    updatedAt: new Date().toISOString(),
+  }),
+}));
+
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: () => ({
+    user: {
+      id: "5",
+      email: "admin2@optiplant.com",
+      nombre: "Admin",
+      role: "ADMINISTRADOR",
+    },
+    isAuthenticated: true,
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 function renderDashboard() {

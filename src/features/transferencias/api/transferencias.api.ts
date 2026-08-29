@@ -1,21 +1,16 @@
 import apiClient from "@/api/client";
 import type {
+  Aprobacion,
+  EstadoTransferencia,
+  Faltante,
+  FiltrosTransferencias,
+  LineaTransferencia,
   NuevaTransferenciaPayload,
   ProductoDisponible,
+  RolAprobacion,
   Transferencia,
+  TratamientoFaltante,
 } from "../types";
-
-/**
- * Único punto de acceso a Transferencias contra el backend real.
- *
- * - `fetchProductosDisponibles`: `GET /existencias?sucursalId=...` (stock > 0
- *   en la sucursal de origen) con la categoría resuelta desde `/productos`.
- * - `crearTransferencia`: `POST /transferencias` (modelo multi-item: cabecera
- *   + líneas de producto).
- *
- * El backend trabaja con identificadores numéricos; la UI usa cadenas, por lo
- * que cada función traduce los `id`/`sucursalId`/`productoId`.
- */
 
 /** Envelope de paginación que devuelve el backend Spring. */
 interface PageEnvelope<T> {
@@ -48,18 +43,48 @@ interface TransferenciaDto {
   codigo: string;
   sucursalOrigenId?: number;
   sucursalDestinoId?: number;
+  nombreSucursalOrigen?: string;
+  nombreSucursalDestino?: string;
+  usuarioSolicitanteId?: number;
   nombreUsuarioSolicitante?: string;
+  urgencia?: string;
+  transportista?: string;
+  guia?: string;
+  fechaEstimadaLlegada?: string;
   estado?: string;
   fechaSolicitud?: string;
   fechaDespacho?: string;
-  totalUnidades: number;
-  lineas: Array<{
-    productoId: number;
-    cantidadSolicitada: number;
+  fechaRecepcion?: string;
+  totalUnidades?: number;
+  lineas?: Array<{
+    id?: number;
+    productoId?: number;
+    sku?: string;
+    nombreProducto?: string;
+    cantidadSolicitada?: number;
+    cantidadDespachada?: number;
+    cantidadRecibida?: number;
+    cantidadDisponibleOrigen?: number;
+    faltantes?: Array<{
+      id?: number;
+      cantidadFaltante?: number;
+      tratamiento?: string;
+      productoId?: number;
+      nombreProducto?: string;
+    }>;
+  }>;
+  aprobaciones?: Array<{
+    id?: number;
+    gerenteId?: number;
+    nombreGerente?: string;
+    rolAprobacion?: string;
+    decision?: string;
+    fecha?: string;
+    observacion?: string;
   }>;
 }
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 50;
 
 function getId(value: number | null | undefined): string {
   return value === null || value === undefined ? "" : String(value);
@@ -118,27 +143,189 @@ export async function fetchProductosDisponibles(
     });
 }
 
+function toTransferencia(data: TransferenciaDto): Transferencia {
+  return {
+    id: getId(data.id),
+    codigo: data.codigo ?? "",
+    sucursalOrigenId: getId(data.sucursalOrigenId),
+    sucursalDestinoId: getId(data.sucursalDestinoId),
+    nombreSucursalOrigen: data.nombreSucursalOrigen ?? "",
+    nombreSucursalDestino: data.nombreSucursalDestino ?? "",
+    usuarioSolicitanteId: getId(data.usuarioSolicitanteId),
+    nombreUsuarioSolicitante: data.nombreUsuarioSolicitante ?? "",
+    urgencia: (data.urgencia as Transferencia["urgencia"]) ?? "NORMAL",
+    transportista: data.transportista ?? "",
+    guia: data.guia ?? "",
+    fechaEstimadaLlegada: data.fechaEstimadaLlegada ?? "",
+    estado: (data.estado as EstadoTransferencia) ?? "SOLICITADA",
+    fechaSolicitud: data.fechaSolicitud ?? "",
+    fechaDespacho: data.fechaDespacho ?? "",
+    fechaRecepcion: data.fechaRecepcion ?? "",
+    totalUnidades: Number(data.totalUnidades ?? 0),
+    lineas: (data.lineas ?? []).map<LineaTransferencia>((l) => ({
+      id: getId(l.id),
+      productoId: getId(l.productoId),
+      sku: l.sku ?? "",
+      nombreProducto: l.nombreProducto ?? "",
+      cantidadSolicitada: Number(l.cantidadSolicitada ?? 0),
+      cantidadDespachada: Number(l.cantidadDespachada ?? 0),
+      cantidadRecibida: Number(l.cantidadRecibida ?? 0),
+      cantidadDisponibleOrigen: Number(l.cantidadDisponibleOrigen ?? 0),
+      faltantes: (l.faltantes ?? []).map<Faltante>((f) => ({
+        id: getId(f.id),
+        productoId: getId(f.productoId ?? l.productoId),
+        nombreProducto: f.nombreProducto ?? l.nombreProducto ?? "",
+        cantidadFaltante: Number(f.cantidadFaltante ?? 0),
+        tratamiento: (f.tratamiento as TratamientoFaltante) ?? "RECLAMACION",
+      })),
+    })),
+    aprobaciones: (data.aprobaciones ?? []).map<Aprobacion>((a) => ({
+      id: getId(a.id),
+      gerenteId: getId(a.gerenteId),
+      nombreGerente: a.nombreGerente ?? "",
+      rolAprobacion: (a.rolAprobacion as RolAprobacion) ?? "ORIGEN",
+      decision: (a.decision as Aprobacion["decision"]) ?? "APROBADO",
+      fecha: a.fecha ?? "",
+      observacion: a.observacion ?? "",
+    })),
+  };
+}
+
+export async function fetchTransferencias(
+  filtros: FiltrosTransferencias,
+  page = 0,
+  size = 10
+): Promise<PageEnvelope<Transferencia>> {
+  const { data } = await apiClient.get<PageEnvelope<TransferenciaDto>>(
+    "/v1/transferencias",
+    {
+      params: {
+        page,
+        size,
+        sucursalOrigenId: filtros.sucursalOrigenId
+          ? Number(filtros.sucursalOrigenId)
+          : undefined,
+        sucursalDestinoId: filtros.sucursalDestinoId
+          ? Number(filtros.sucursalDestinoId)
+          : undefined,
+        estado: filtros.estado || undefined,
+        busqueda: filtros.busqueda || undefined,
+      },
+    }
+  );
+  return {
+    content: data.content.map(toTransferencia),
+    page: data.page,
+    size: data.size,
+    totalElements: data.totalElements,
+    totalPages: data.totalPages,
+  };
+}
+
+export async function fetchTransferencia(id: string): Promise<Transferencia> {
+  const { data } = await apiClient.get<TransferenciaDto>(
+    `/v1/transferencias/${Number(id)}`
+  );
+  return toTransferencia(data);
+}
+
 export async function crearTransferencia(
   payload: NuevaTransferenciaPayload
 ): Promise<Transferencia> {
   const { data } = await apiClient.post<TransferenciaDto>("/v1/transferencias", {
     sucursalOrigenId: Number(payload.sucursalOrigenId),
     sucursalDestinoId: Number(payload.sucursalDestinoId),
-    transportista: payload.transportador.trim() || undefined,
+    urgencia: "NORMAL",
     lineas: payload.items.map((item) => ({
       productoId: Number(item.productoId),
       cantidadSolicitada: item.cantidad,
     })),
   });
+  return toTransferencia(data);
+}
 
-  return {
-    id: getId(data.id),
-    codigo: data.codigo,
-    sucursalOrigenId: getId(data.sucursalOrigenId),
-    sucursalDestinoId: getId(data.sucursalDestinoId),
-    estado: ("en_transito" as Transferencia["estado"]),
-    fechaEnvio: data.fechaDespacho ?? data.fechaSolicitud ?? "",
-    responsable: data.nombreUsuarioSolicitante ?? "",
-    totalUnidades: data.totalUnidades,
-  };
+export interface AprobarTransferenciaPayload {
+  transferenciaId: string;
+  gerenteId: string;
+  rolAprobacion: RolAprobacion;
+  decision: "APROBADO" | "RECHAZADO";
+  observacion?: string;
+}
+
+export async function aprobarTransferencia(
+  payload: AprobarTransferenciaPayload
+): Promise<Transferencia> {
+  const { data } = await apiClient.post<TransferenciaDto>(
+    `/v1/transferencias/${Number(payload.transferenciaId)}/aprobacion`,
+    {
+      gerenteId: payload.gerenteId ? Number(payload.gerenteId) : undefined,
+      rolAprobacion: payload.rolAprobacion,
+      decision: payload.decision,
+      observacion: payload.observacion || undefined,
+    }
+  );
+  return toTransferencia(data);
+}
+
+export async function prepararTransferencia(id: string): Promise<Transferencia> {
+  const { data } = await apiClient.post<TransferenciaDto>(
+    `/v1/transferencias/${Number(id)}/preparacion`
+  );
+  return toTransferencia(data);
+}
+
+export interface DespacharTransferenciaPayload {
+  id: string;
+  lineas: Array<{ transferenciaLineaId: string; cantidadDespachada: number }>;
+  transportista?: string;
+  guia?: string;
+}
+
+export async function despacharTransferencia(
+  payload: DespacharTransferenciaPayload
+): Promise<Transferencia> {
+  const { data } = await apiClient.post<TransferenciaDto>(
+    `/v1/transferencias/${Number(payload.id)}/despacho`,
+    {
+      lineas: payload.lineas.map((l) => ({
+        transferenciaLineaId: Number(l.transferenciaLineaId),
+        cantidadDespachada: l.cantidadDespachada,
+      })),
+      transportista: payload.transportista || undefined,
+      guia: payload.guia || undefined,
+    }
+  );
+  return toTransferencia(data);
+}
+
+export interface RecibirTransferenciaPayload {
+  id: string;
+  lineas: Array<{
+    transferenciaLineaId: string;
+    cantidadRecibida: number;
+    tratamiento?: TratamientoFaltante;
+  }>;
+}
+
+export async function recibirTransferencia(
+  payload: RecibirTransferenciaPayload
+): Promise<Transferencia> {
+  const { data } = await apiClient.post<TransferenciaDto>(
+    `/v1/transferencias/${Number(payload.id)}/recepcion`,
+    {
+      lineas: payload.lineas.map((l) => ({
+        transferenciaLineaId: Number(l.transferenciaLineaId),
+        cantidadRecibida: l.cantidadRecibida,
+        tratamiento: l.tratamiento || undefined,
+      })),
+    }
+  );
+  return toTransferencia(data);
+}
+
+export async function cancelarTransferencia(id: string): Promise<Transferencia> {
+  const { data } = await apiClient.post<TransferenciaDto>(
+    `/v1/transferencias/${Number(id)}/cancelacion`
+  );
+  return toTransferencia(data);
 }

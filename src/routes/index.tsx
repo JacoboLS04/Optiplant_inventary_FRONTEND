@@ -11,10 +11,15 @@ const Ventas = lazy(() => import("@/features/ventas/pages/Ventas"));
 const Transferencias = lazy(
   () => import("@/features/transferencias/pages/Transferencias")
 );
+const Usuarios = lazy(() => import("@/features/usuarios/pages/Usuarios"));
+const Sucursales = lazy(
+  () => import("@/features/sucursales/pages/Sucursales")
+);
 const AppLayout = lazy(() => import("@/components/layout/AppLayout"));
 const ProtectedRoute = lazy(
   () => import("@/components/layout/ProtectedRoute")
 );
+const RoleRoute = lazy(() => import("@/components/layout/RoleRoute"));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -89,6 +94,37 @@ export const router = createBrowserRouter([
             <Transferencias />
           </SuspenseWrapper>
         ),
+      },
+      {
+        // Todo /administracion/** exige rol ADMINISTRADOR.
+        path: "administracion",
+        element: (
+          <SuspenseWrapper>
+            <RoleRoute roles={["ADMINISTRADOR"]} />
+          </SuspenseWrapper>
+        ),
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/administracion/usuarios" replace />,
+          },
+          {
+            path: "usuarios",
+            element: (
+              <SuspenseWrapper>
+                <Usuarios />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: "sucursales",
+            element: (
+              <SuspenseWrapper>
+                <Sucursales />
+              </SuspenseWrapper>
+            ),
+          },
+        ],
       },
     ],
   },

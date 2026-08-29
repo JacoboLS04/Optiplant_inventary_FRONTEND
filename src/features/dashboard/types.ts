@@ -78,3 +78,39 @@ export interface BranchNetworkData {
   alerts: StockAlert[];
   updatedAt: string;
 }
+
+/** Producto con medición de rotación (unidades despachadas en el periodo). */
+export interface ProductoRotacion {
+  productoId: string;
+  sku: string;
+  nombre: string;
+  unidades: number;
+  stockActual: number;
+  rotacion: number;
+}
+
+/** Respuesta de `GET /dashboard/rotacion` — rotación y demanda de productos. */
+export interface RotacionData {
+  periodoDias: number;
+  totalUnidades: number;
+  altaDemanda: ProductoRotacion[];
+  bajaDemanda: ProductoRotacion[];
+  updatedAt: string;
+}
+
+/** Volumen de ventas agregado por mes. */
+export interface MesVentas {
+  anio: number;
+  mes: number;
+  /** Etiqueta legible, p. ej. "ago 2026". */
+  etiqueta: string;
+  total: number;
+}
+
+/** Respuesta de `GET /dashboard/ventas-mensuales`. */
+export interface VentasMensualesData {
+  mesesConsiderados: number;
+  totalPeriodo: number;
+  meses: MesVentas[];
+  updatedAt: string;
+}

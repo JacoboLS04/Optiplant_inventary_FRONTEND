@@ -3,6 +3,8 @@ import type {
   BranchNetworkData,
   InventoryMovement,
   InventorySummaryData,
+  RotacionData,
+  VentasMensualesData,
 } from "../types";
 
 /**
@@ -141,6 +143,86 @@ export async function fetchBranchNetwork(): Promise<BranchNetworkData> {
       currentUnits: a.currentUnits,
       minUnits: a.minUnits,
       severity: a.severity,
+    })),
+    updatedAt: data.updatedAt,
+  };
+}
+
+/** DTO real de `GET /dashboard/rotacion`. */
+interface RotacionDto {
+  periodoDias: number;
+  totalUnidades: number;
+  altaDemanda: Array<{
+    productoId: number;
+    sku: string;
+    nombre: string;
+    unidades: number;
+    stockActual: number;
+    rotacion: number;
+  }>;
+  bajaDemanda: Array<{
+    productoId: number;
+    sku: string;
+    nombre: string;
+    unidades: number;
+    stockActual: number;
+    rotacion: number;
+  }>;
+  updatedAt: string;
+}
+
+export async function fetchRotacion(): Promise<RotacionData> {
+  const { data } = await apiClient.get<RotacionDto>("/v1/dashboard/rotacion");
+
+  return {
+    periodoDias: data.periodoDias,
+    totalUnidades: data.totalUnidades,
+    altaDemanda: data.altaDemanda.map((p) => ({
+      productoId: getId(p.productoId),
+      sku: p.sku,
+      nombre: p.nombre,
+      unidades: p.unidades,
+      stockActual: p.stockActual,
+      rotacion: p.rotacion,
+    })),
+    bajaDemanda: data.bajaDemanda.map((p) => ({
+      productoId: getId(p.productoId),
+      sku: p.sku,
+      nombre: p.nombre,
+      unidades: p.unidades,
+      stockActual: p.stockActual,
+      rotacion: p.rotacion,
+    })),
+    updatedAt: data.updatedAt,
+  };
+}
+
+/** DTO real de `GET /dashboard/ventas-mensuales`. */
+interface VentasMensualesDto {
+  mesesConsiderados: number;
+  totalPeriodo: number;
+  meses: Array<{
+    anio: number;
+    mes: number;
+    etiqueta: string;
+    total: number;
+  }>;
+  updatedAt: string;
+}
+
+export async function fetchVentasMensuales(): Promise<VentasMensualesData> {
+  const { data } = await apiClient.get<VentasMensualesDto>(
+    "/v1/dashboard/ventas-mensuales"
+  );
+
+  return {
+    mesesConsiderados: data.mesesConsiderados,
+    totalPeriodo: data.totalPeriodo,
+    meses: data.meses.map((m) => ({
+      anio: m.anio,
+      mes: m.mes,
+      etiqueta: m.etiqueta,
+      total: m.total,
     })),
     updatedAt: data.updatedAt,
   };

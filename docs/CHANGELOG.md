@@ -2,6 +2,44 @@
 
 ---
 
+## Iteración 05 — Administración: gestión de usuarios
+
+### Objetivo
+
+Añadir la sección "Administración" al sidebar (visible solo para ADMINISTRADOR) y,
+dentro de ella, la pantalla de usuarios contra el backend real `/api/v1/usuarios`.
+
+### Cambios
+
+- **Sidebar por configuración**: `components/layout/navigation.ts` describe el menú como
+  lista de `NavLink | NavGroup`, cada uno con `roles` opcionales; `navegacionVisible(rol)`
+  filtra antes de renderizar. `components/layout/SidebarNav.tsx` dibuja enlaces simples y
+  grupos desplegables. `AppLayout` solo delega en él: no se tocó el resto del layout.
+- **Protección por rol**: `components/layout/RoleRoute.tsx` complementa a `ProtectedRoute`
+  (sesión) exigiendo rol. Se aplica como ruta padre de `/administracion`, así que cubre
+  cualquier pantalla que se agregue debajo. Sin el rol, muestra "Acceso restringido".
+- **`features/usuarios/`**: types → api → hooks (TanStack Query con invalidación) →
+  components → page. Listado paginado en servidor con filtros de rol, estado y búsqueda
+  con debounce; alta y edición en un mismo `Dialog` (react-hook-form + zod); activar y
+  desactivar con confirmación previa.
+- **Utilidades compartidas**: `lib/roles.ts` (roles, etiquetas, `normalizarRol` tolerante
+  al prefijo `ROLE_`), `lib/api-error.ts` (lee `{message}` del backend) y
+  `lib/zod-resolver.ts` (resolver propio: el proyecto no tiene `@hookform/resolvers` y no
+  se añadieron dependencias).
+
+### Diferencia detectada contra el contrato
+
+`GET /v1/usuarios` filtra el texto con el parámetro **`busqueda`**, no `nombre`
+(verificado en `UsuarioController`). El frontend envía `busqueda`.
+
+### Validación
+
+`tsc`, build, lint (sin reglas nuevas) y tests en verde. Revisión visual en 1440 y 390 px
+del listado, del formulario de edición y del bloqueo por rol. Falta la corrida manual
+extremo a extremo contra el backend (requiere credenciales de administrador).
+
+---
+
 ## Iteración 04 — Inventario, Compras, Transferencias y Ventas
 
 ### Objetivo

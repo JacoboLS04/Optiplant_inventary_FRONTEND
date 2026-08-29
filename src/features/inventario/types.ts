@@ -12,10 +12,11 @@ export interface Producto {
   stockMinimo: number;
   precioUnitario: number;
   estado: EstadoStock;
+  activo: boolean;
   actualizadoEn: string;
 }
 
-export type TipoAjuste = "entrada" | "salida";
+export type TipoAjuste = "entrada" | "salida" | "merma";
 
 export interface AjusteStockPayload {
   productoId: string;

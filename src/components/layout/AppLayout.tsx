@@ -1,11 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  TrendingUp,
-  ArrowLeftRight,
   LogOut,
   Search,
   Menu,
@@ -18,17 +13,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
-
-const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/inventario", label: "Inventario", icon: Package },
-  { to: "/compras", label: "Compras", icon: ShoppingCart },
-  { to: "/ventas", label: "Ventas", icon: TrendingUp },
-  { to: "/transferencias", label: "Transferencias", icon: ArrowLeftRight },
-] as const;
+import { SidebarNav } from "./SidebarNav";
 
 export default function AppLayout() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -146,29 +133,7 @@ export default function AppLayout() {
         <div className="mx-4 my-3 h-px bg-sidebar-border" />
 
         {/* Main navigation */}
-        <nav className="flex-1 space-y-0.5 px-3" aria-label="Navegación principal">
-          {navItems.map(({ to, label, icon: Icon }) => {
-            const active = location.pathname === to;
-            return (
-              <Link
-                key={to}
-                to={to}
-                onClick={handleNavClick}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                  active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+        <SidebarNav onNavigate={handleNavClick} />
 
         {/* Spacer */}
         <div className="flex-1" />

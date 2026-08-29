@@ -11,6 +11,7 @@ interface AuthUser {
   name: string;
   email: string;
   role: string;
+  usuarioId?: string;
 }
 
 interface AuthContextType {
@@ -68,11 +69,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: data.nombre,
         email: data.email,
         role: data.rol,
+        usuarioId: data.usuarioId == null ? undefined : String(data.usuarioId),
       })
     );
 
     setIsAuthenticated(true);
-    setUser({ name: data.nombre, email: data.email, role: data.rol });
+    setUser({
+      name: data.nombre,
+      email: data.email,
+      role: data.rol,
+      usuarioId: data.usuarioId == null ? undefined : String(data.usuarioId),
+    });
   }, []);
 
   const logout = useCallback(() => {

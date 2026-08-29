@@ -17,12 +17,19 @@ import type { EstadoOrdenCompra } from "../types";
 export interface FiltrosComprasValue {
   estados: EstadoOrdenCompra[];
   sucursalId: string;
+  productoId: string;
+}
+
+export interface ProductoFiltro {
+  id: string;
+  nombre: string;
 }
 
 interface FiltrosComprasProps {
   value: FiltrosComprasValue;
   onChange: (value: FiltrosComprasValue) => void;
   conteoPorEstado: Record<EstadoOrdenCompra, number>;
+  productos: ProductoFiltro[];
   onReset: () => void;
 }
 
@@ -32,6 +39,7 @@ export function FiltrosCompras({
   value,
   onChange,
   conteoPorEstado,
+  productos,
   onReset,
 }: FiltrosComprasProps) {
   const { data: sucursales = [] } = useSucursales();
@@ -46,7 +54,10 @@ export function FiltrosCompras({
     });
   };
 
-  const hayFiltros = value.estados.length > 0 || value.sucursalId !== "todas";
+  const hayFiltros =
+    value.estados.length > 0 ||
+    value.sucursalId !== "todas" ||
+    value.productoId !== "todos";
 
   return (
     <Card className="lg:sticky lg:top-6">
@@ -98,6 +109,28 @@ export function FiltrosCompras({
               {sucursales.map((sucursal) => (
                 <SelectItem key={sucursal.id} value={sucursal.id}>
                   {sucursal.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="compras-producto" className="text-xs text-muted-foreground">
+            Producto
+          </Label>
+          <Select
+            value={value.productoId}
+            onValueChange={(productoId) => onChange({ ...value, productoId })}
+          >
+            <SelectTrigger id="compras-producto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="todos">Todos los productos</SelectItem>
+              {productos.map((producto) => (
+                <SelectItem key={producto.id} value={producto.id}>
+                  {producto.nombre}
                 </SelectItem>
               ))}
             </SelectContent>

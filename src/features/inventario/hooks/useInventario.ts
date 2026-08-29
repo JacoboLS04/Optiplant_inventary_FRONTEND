@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   crearProducto,
   fetchProductos,
+  inactivarProducto,
   registrarAjusteStock,
 } from "../api/inventario.api";
 
@@ -34,6 +35,17 @@ export function useAjusteStock() {
 
   return useMutation({
     mutationFn: registrarAjusteStock,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: inventarioKeys.all });
+    },
+  });
+}
+
+export function useInactivarProducto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: inactivarProducto,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: inventarioKeys.all });
     },

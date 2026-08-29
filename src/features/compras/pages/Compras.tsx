@@ -16,10 +16,12 @@ import { OrdenCompraCard } from "../components/OrdenCompraCard";
 import { useOrdenesCompra } from "../hooks/useCompras";
 import { ESTADO_ORDEN_LABEL } from "../lib/estado-orden";
 import type { EstadoOrdenCompra } from "../types";
+import type { ProductoFiltro } from "../components/FiltrosCompras";
 
 const FILTROS_INICIALES: FiltrosComprasValue = {
   estados: [],
   sucursalId: "todas",
+  productoId: "todos",
 };
 
 const ESTADOS_VACIOS = Object.fromEntries(
@@ -41,6 +43,23 @@ export default function Compras() {
     );
   }, [ordenes]);
 
+  const productosDisponibles = useMemo<ProductoFiltro[]>(() => {
+    const mapa = new Map<string, ProductoFiltro>();
+    for (const orden of ordenes) {
+      for (const item of orden.items) {
+        if (item.productoId && !mapa.has(item.productoId)) {
+          mapa.set(item.productoId, {
+            id: item.productoId,
+            nombre: item.nombre.trim() || `Producto ${item.productoId}`,
+          });
+        }
+      }
+    }
+    return Array.from(mapa.values()).sort((a, b) =>
+      a.nombre.localeCompare(b.nombre)
+    );
+  }, [ordenes]);
+
   const filtradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
 
@@ -50,8 +69,13 @@ export default function Compras() {
         orden.codigo.toLowerCase().includes(termino) ||
         orden.proveedor.toLowerCase().includes(termino);
 
+      const coincideProducto =
+        filtros.productoId === "todos" ||
+        orden.items.some((item) => item.productoId === filtros.productoId);
+
       return (
         coincideTexto &&
+        coincideProducto &&
         (filtros.estados.length === 0 || filtros.estados.includes(orden.estado)) &&
         (filtros.sucursalId === "todas" ||
           orden.sucursalDestinoId === filtros.sucursalId)
@@ -82,6 +106,7 @@ export default function Compras() {
           value={filtros}
           onChange={setFiltros}
           conteoPorEstado={conteoPorEstado}
+          productos={productosDisponibles}
           onReset={() => setFiltros(FILTROS_INICIALES)}
         />
 

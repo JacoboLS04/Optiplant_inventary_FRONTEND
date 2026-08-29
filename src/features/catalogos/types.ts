@@ -2,6 +2,8 @@ export interface Sucursal {
   id: string;
   nombre: string;
   tipo?: "bodega" | "sucursal";
+  direccion?: string;
+  estado?: string;
 }
 
 export interface Categoria {

@@ -74,6 +74,7 @@ export const productosStore: Producto[] = SEEDS.map(
     stockMinimo,
     precioUnitario,
     estado: resolverEstadoStock(stock, stockMinimo),
+    activo: true,
     actualizadoEn: new Date(Date.now() - horas * 3_600_000).toISOString(),
   })
 );
