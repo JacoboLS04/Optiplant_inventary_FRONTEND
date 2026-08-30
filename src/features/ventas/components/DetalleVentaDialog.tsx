@@ -1,4 +1,4 @@
-import { Receipt } from "lucide-react";
+import { Printer, Receipt } from "lucide-react";
 
 import {
   Dialog,
@@ -15,7 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
+import { imprimirReciboVenta } from "../lib/documento-recibo";
 import type { Venta } from "../types";
 
 interface DetalleVentaDialogProps {
@@ -41,6 +43,17 @@ export function DetalleVentaDialog({
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" aria-hidden="true" />
             {venta.codigo}
+            <span className="ml-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => imprimirReciboVenta(venta)}
+              >
+                <Printer className="h-4 w-4" aria-hidden="true" />
+                Imprimir
+              </Button>
+            </span>
           </DialogTitle>
           <DialogDescription>
             Comprobante consultable de la venta registrada.

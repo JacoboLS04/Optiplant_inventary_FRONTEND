@@ -7,6 +7,7 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBanderaUrl, useTextoUrl } from "@/hooks/useEstadoUrl";
 import { useTransferencias } from "../hooks/useTransferencias";
 import { TransferenciaCard } from "../components/TransferenciaCard";
 import { CrearTransferenciaDialog } from "../components/CrearTransferenciaDialog";
@@ -23,10 +24,13 @@ const FILTROS_INICIALES: FiltrosTransferenciasValue = {
 const PAGE_SIZE = 10;
 
 export default function Transferencias() {
-  const [busqueda, setBusqueda] = useState("");
+  const [busqueda, setBusqueda] = useTextoUrl("buscar");
+  const [crearAbierto, setCrearAbierto] = useBanderaUrl("nuevo");
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
-  const [page, setPage] = useState(1);
-  const [crearAbierto, setCrearAbierto] = useState(false);
+  // La página se guarda junto al término que la originó: si la búsqueda cambia
+  // (incluso desde el buscador global, que escribe la URL) se vuelve a la 1.
+  const [paginacion, setPaginacion] = useState({ termino: busqueda, page: 1 });
+  const paginaActual = paginacion.termino === busqueda ? paginacion.page : 1;
 
   const { data, isPending, isError, isFetching, refetch } = useTransferencias(
     {
@@ -41,19 +45,19 @@ export default function Transferencias() {
           ? undefined
           : filtros.sucursalDestinoId,
     },
-    page - 1,
+    paginaActual - 1,
     PAGE_SIZE
   );
 
   const transferencias = data?.content ?? [];
 
   const cambiarPagina = (nueva: number) => {
-    setPage(nueva);
+    setPaginacion({ termino: busqueda, page: nueva });
   };
 
   const reiniciarFiltros = () => {
     setFiltros(FILTROS_INICIALES);
-    setPage(1);
+    cambiarPagina(1);
   };
 
   return (
@@ -127,7 +131,7 @@ export default function Transferencias() {
                 ))}
               </div>
               <TablePagination
-                page={page}
+                page={paginaActual}
                 pageSize={PAGE_SIZE}
                 totalItems={data?.totalElements ?? 0}
                 onPageChange={cambiarPagina}

@@ -1,23 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import {
-  LogOut,
-  Search,
-  Menu,
-  X,
-  Building2,
-  Bell,
-  Zap,
-  ChevronDown,
-  Leaf,
-} from "lucide-react";
+import { LogOut, Menu, X, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { AlertasStockButton } from "@/features/alertas/components/AlertasStockButton";
+import { BuscadorGlobal } from "@/features/busqueda/components/BuscadorGlobal";
+import { SelectorSucursalActiva } from "@/features/sucursales/components/SelectorSucursalActiva";
+import { useNombreSucursalActiva } from "@/features/sucursales/hooks/useNombreSucursalActiva";
+import { AccionesRapidas } from "./AccionesRapidas";
 import { SidebarNav } from "./SidebarNav";
 
 export default function AppLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const nombreSucursalActiva = useNombreSucursalActiva();
   const [mobileOpen, setMobileOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -89,44 +85,21 @@ export default function AppLayout() {
 
         {/* Search */}
         <div className="px-4 pt-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sidebar-foreground/40" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              className="h-9 w-full rounded-lg border-0 bg-white/10 pl-9 pr-3 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40 transition-colors focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-sidebar-ring"
-            />
-          </div>
+          <BuscadorGlobal onNavigate={handleNavClick} />
         </div>
 
         {/* Branch selector */}
         <div className="px-4 pt-3">
-          <button
-            type="button"
-            className="flex h-9 w-full items-center gap-2.5 rounded-lg border border-sidebar-border px-3 text-sm text-sidebar-foreground/80 transition-colors hover:bg-white/5 hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-          >
-            <Building2 className="h-4 w-4 shrink-0 text-sidebar-foreground/50" />
-            <span className="flex-1 truncate text-left">Todas las sucursales</span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-sidebar-foreground/40" />
-          </button>
+          <SelectorSucursalActiva />
         </div>
 
         {/* Quick access */}
         <div className="flex items-center gap-1 px-4 pt-3">
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-foreground/50 transition-colors hover:bg-white/8 hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-            aria-label="Notificaciones"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-foreground/50 transition-colors hover:bg-white/8 hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-            aria-label="Acciones rápidas"
-          >
-            <Zap className="h-4 w-4" />
-          </button>
+          <AlertasStockButton
+            ambito={nombreSucursalActiva}
+            onNavigate={handleNavClick}
+          />
+          <AccionesRapidas onNavigate={handleNavClick} />
         </div>
 
         {/* Divider */}

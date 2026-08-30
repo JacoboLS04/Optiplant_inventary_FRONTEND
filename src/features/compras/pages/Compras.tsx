@@ -6,6 +6,11 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { EmptyState, ErrorState } from "@/components/shared/SectionState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  TODAS_LAS_SUCURSALES,
+  useSucursalActiva,
+} from "@/features/sucursales/context/SucursalActivaContext";
+import { useBanderaUrl, useTextoUrl } from "@/hooks/useEstadoUrl";
 import { formatNumber } from "@/lib/format";
 import {
   FiltrosCompras,
@@ -18,9 +23,11 @@ import { ESTADO_ORDEN_LABEL } from "../lib/estado-orden";
 import type { EstadoOrdenCompra } from "../types";
 import type { ProductoFiltro } from "../components/FiltrosCompras";
 
-const FILTROS_INICIALES: FiltrosComprasValue = {
+/** La sucursal la aporta el selector global del sidebar. */
+type FiltrosLocales = Omit<FiltrosComprasValue, "sucursalId">;
+
+const FILTROS_INICIALES: FiltrosLocales = {
   estados: [],
-  sucursalId: "todas",
   productoId: "todos",
 };
 
@@ -32,9 +39,27 @@ export default function Compras() {
   const { data: ordenes = [], isPending, isError, isFetching, refetch } =
     useOrdenesCompra();
 
-  const [busqueda, setBusqueda] = useState("");
-  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
-  const [crearAbierto, setCrearAbierto] = useState(false);
+  const { sucursalId, setSucursalId } = useSucursalActiva();
+  const [busqueda, setBusqueda] = useTextoUrl("buscar");
+  const [crearAbierto, setCrearAbierto] = useBanderaUrl("nuevo");
+  const [filtrosLocales, setFiltrosLocales] = useState(FILTROS_INICIALES);
+
+  const filtros = useMemo<FiltrosComprasValue>(
+    () => ({ ...filtrosLocales, sucursalId }),
+    [filtrosLocales, sucursalId]
+  );
+
+  const actualizarFiltros = ({
+    sucursalId: siguienteSucursal,
+    ...resto
+  }: FiltrosComprasValue) => {
+    if (siguienteSucursal !== sucursalId) setSucursalId(siguienteSucursal);
+    setFiltrosLocales(resto);
+  };
+
+  const restablecerFiltros = () => {
+    actualizarFiltros({ ...FILTROS_INICIALES, sucursalId: TODAS_LAS_SUCURSALES });
+  };
 
   const conteoPorEstado = useMemo(() => {
     return ordenes.reduce(
@@ -104,10 +129,10 @@ export default function Compras() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] lg:items-start">
         <FiltrosCompras
           value={filtros}
-          onChange={setFiltros}
+          onChange={actualizarFiltros}
           conteoPorEstado={conteoPorEstado}
           productos={productosDisponibles}
-          onReset={() => setFiltros(FILTROS_INICIALES)}
+          onReset={restablecerFiltros}
         />
 
         <div className="space-y-4">

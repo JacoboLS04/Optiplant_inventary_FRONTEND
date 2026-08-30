@@ -24,6 +24,7 @@ import {
   useCategorias,
   useSucursales,
 } from "@/features/catalogos/hooks/useCatalogos";
+import { useSucursalActiva } from "@/features/sucursales/context/SucursalActivaContext";
 import { useCrearProducto } from "../hooks/useInventario";
 
 interface NuevoProductoForm {
@@ -57,7 +58,14 @@ export function NuevoProductoDialog({
 }: NuevoProductoDialogProps) {
   const { data: categorias = [] } = useCategorias();
   const { data: sucursales = [] } = useSucursales();
+  const { sucursalIdFiltro } = useSucursalActiva();
   const crearProducto = useCrearProducto();
+
+  // La existencia inicial se crea en la sucursal de trabajo del sidebar.
+  const valoresIniciales: NuevoProductoForm = {
+    ...VALORES_INICIALES,
+    sucursalId: sucursalIdFiltro ?? "",
+  };
 
   const {
     register,
@@ -65,10 +73,10 @@ export function NuevoProductoDialog({
     control,
     reset,
     formState: { errors },
-  } = useForm<NuevoProductoForm>({ defaultValues: VALORES_INICIALES });
+  } = useForm<NuevoProductoForm>({ defaultValues: valoresIniciales });
 
   const cerrar = (siguiente: boolean) => {
-    if (!siguiente) reset(VALORES_INICIALES);
+    if (!siguiente) reset(valoresIniciales);
     onOpenChange(siguiente);
   };
 

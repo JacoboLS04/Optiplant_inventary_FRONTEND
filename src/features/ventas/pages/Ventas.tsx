@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useOpcionUrl } from "@/hooks/useEstadoUrl";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CarritoVenta } from "../components/CarritoVenta";
@@ -11,11 +12,13 @@ import { HistorialVentas } from "../components/HistorialVentas";
 import { useRegistrarVenta } from "../hooks/useVentas";
 import type { LineaVenta, ProductoVenta } from "../types";
 
-type VistaVentas = "nueva" | "historial";
+const VISTAS = ["nueva", "historial"] as const;
+
+type VistaVentas = (typeof VISTAS)[number];
 
 export default function Ventas() {
   const registrarVenta = useRegistrarVenta();
-  const [vista, setVista] = useState<VistaVentas>("nueva");
+  const [vista, setVista] = useOpcionUrl<VistaVentas>("vista", VISTAS, "nueva");
 
   const [lineas, setLineas] = useState<LineaVenta[]>([]);
   const [descuento, setDescuento] = useState(0);

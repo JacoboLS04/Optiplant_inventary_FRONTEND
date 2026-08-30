@@ -1,4 +1,4 @@
-import { Download, SlidersHorizontal } from "lucide-react";
+import { Download, Printer, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ interface FiltrosInventarioProps {
   onChange: (value: FiltrosInventarioValue) => void;
   onExport: () => void;
   exportDisabled?: boolean;
+  onPrint?: () => void;
 }
 
 const PERIODO_LABEL: Record<PeriodoActualizacion, string> = {
@@ -41,6 +42,7 @@ export function FiltrosInventario({
   onChange,
   onExport,
   exportDisabled = false,
+  onPrint,
 }: FiltrosInventarioProps) {
   const { data: categorias = [] } = useCategorias();
   const { data: sucursales = [] } = useSucursales();
@@ -141,16 +143,30 @@ export function FiltrosInventario({
         </div>
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        onClick={onExport}
-        disabled={exportDisabled}
-        className="bg-card"
-      >
-        <Download className="h-4 w-4" aria-hidden="true" />
-        Exportar CSV
-      </Button>
+      <div className="flex flex-wrap items-end gap-2">
+        {onPrint ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onPrint}
+            disabled={exportDisabled}
+            className="bg-card"
+          >
+            <Printer className="h-4 w-4" aria-hidden="true" />
+            Imprimir hoja
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onExport}
+          disabled={exportDisabled}
+          className="bg-card"
+        >
+          <Download className="h-4 w-4" aria-hidden="true" />
+          Exportar CSV
+        </Button>
+      </div>
     </div>
   );
 }

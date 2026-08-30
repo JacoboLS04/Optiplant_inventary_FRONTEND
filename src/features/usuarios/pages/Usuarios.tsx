@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBanderaUrl, useTextoUrl } from "@/hooks/useEstadoUrl";
 import { mensajeDeError } from "@/lib/api-error";
 import { ROL_LABEL, type Rol } from "@/lib/roles";
 import { ConfirmarEstadoDialog } from "../components/ConfirmarEstadoDialog";
@@ -19,27 +20,41 @@ import {
   type FiltrosUsuariosValue,
 } from "../components/FiltrosUsuarios";
 import { UsuarioFormDialog } from "../components/UsuarioFormDialog";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useCambiarEstadoUsuario, useUsuarios } from "../hooks/useUsuarios";
 import type { Usuario } from "../types";
 
 const PAGE_SIZE = 10;
 
-const FILTROS_INICIALES: FiltrosUsuariosValue = {
-  nombre: "",
+/** El nombre buscado vive en la URL para poder enlazar desde el buscador global. */
+type FiltrosLocales = Omit<FiltrosUsuariosValue, "nombre">;
+
+const FILTROS_INICIALES: FiltrosLocales = {
   rol: "todos",
   estado: "todos",
 };
 
 export default function Usuarios() {
-  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
-  const [pagina, setPagina] = useState(1);
-  const [formAbierto, setFormAbierto] = useState(false);
+  const [nombre, setNombre] = useTextoUrl("buscar");
+  const [creando, setCreando] = useBanderaUrl("nuevo");
+  const [filtrosLocales, setFiltrosLocales] = useState(FILTROS_INICIALES);
+  const [paginacion, setPaginacion] = useState({ termino: nombre, page: 1 });
   const [usuarioEnEdicion, setUsuarioEnEdicion] = useState<Usuario | null>(null);
   const [usuarioEnConfirmacion, setUsuarioEnConfirmacion] =
     useState<Usuario | null>(null);
 
-  const busquedaDiferida = useDebouncedValue(filtros.nombre.trim());
+  const filtros = useMemo<FiltrosUsuariosValue>(
+    () => ({ ...filtrosLocales, nombre }),
+    [filtrosLocales, nombre]
+  );
+
+  // Cambiar el término (aquí o desde el buscador global) devuelve a la página 1.
+  const pagina = paginacion.termino === nombre ? paginacion.page : 1;
+  const cambiarPagina = (nueva: number) =>
+    setPaginacion({ termino: nombre, page: nueva });
+
+  const formAbierto = creando || usuarioEnEdicion !== null;
+  const busquedaDiferida = useDebouncedValue(nombre.trim());
   const cambiarEstado = useCambiarEstadoUsuario();
 
   const consulta = useUsuarios({
@@ -55,19 +70,32 @@ export default function Usuarios() {
   const usuarios = consulta.data?.usuarios ?? [];
   const totalElementos = consulta.data?.totalElementos ?? 0;
 
-  const actualizarFiltros = (siguiente: FiltrosUsuariosValue) => {
-    setFiltros(siguiente);
-    setPagina(1);
+  const actualizarFiltros = ({
+    nombre: siguienteNombre,
+    ...resto
+  }: FiltrosUsuariosValue) => {
+    if (siguienteNombre !== nombre) setNombre(siguienteNombre);
+    setFiltrosLocales(resto);
+    cambiarPagina(1);
+  };
+
+  const restablecerFiltros = () => {
+    actualizarFiltros({ ...FILTROS_INICIALES, nombre: "" });
   };
 
   const abrirCreacion = () => {
     setUsuarioEnEdicion(null);
-    setFormAbierto(true);
+    setCreando(true);
   };
 
   const abrirEdicion = (usuario: Usuario) => {
     setUsuarioEnEdicion(usuario);
-    setFormAbierto(true);
+  };
+
+  const cerrarFormulario = (abierto: boolean) => {
+    if (abierto) return;
+    setUsuarioEnEdicion(null);
+    setCreando(false);
   };
 
   const confirmarCambioDeEstado = async () => {
@@ -226,7 +254,7 @@ export default function Usuarios() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => actualizarFiltros(FILTROS_INICIALES)}
+                    onClick={restablecerFiltros}
                   >
                     Restablecer filtros
                   </Button>
@@ -240,7 +268,7 @@ export default function Usuarios() {
               page={pagina}
               pageSize={PAGE_SIZE}
               totalItems={totalElementos}
-              onPageChange={setPagina}
+              onPageChange={cambiarPagina}
               itemLabel="usuarios"
             />
           ) : null}
@@ -249,7 +277,7 @@ export default function Usuarios() {
 
       <UsuarioFormDialog
         open={formAbierto}
-        onOpenChange={setFormAbierto}
+        onOpenChange={cerrarFormulario}
         usuario={usuarioEnEdicion}
       />
 

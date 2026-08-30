@@ -2,6 +2,46 @@
 
 ---
 
+## Iteración 06 — Sidebar operativo (búsqueda, sucursal, alertas, acciones rápidas)
+
+### Objetivo
+
+Dar funcionalidad real a los cuatro controles del sidebar que estaban como maqueta:
+buscador global, selector de sucursal, campana de alertas de stock y menú de acciones
+rápidas.
+
+### Cambios
+
+- **Acciones rápidas (rayo)**: `components/layout/AccionesRapidas.tsx` con atajos a
+  crear producto, registrar venta, nueva orden, transferencia, usuario y sucursal (estas
+  dos solo para ADMINISTRADOR). Navega con query params (`?nuevo=1`, `?vista=nueva`) para
+  abrir el diálogo o vista correcta en cada módulo.
+- **Campana de alertas**: `features/alertas/` consulta `GET /v1/existencias` (sin depender
+  de `?estadoStock=`, que filtra en memoria por página) y clasifica agotado/bajo/crítico.
+  Popover con badge de conteo, lista acotada y enlace a Inventario. Respeta la sucursal
+  activa del sidebar.
+- **Buscador global**: `features/busqueda/` con paleta modal (`Ctrl+K`), búsqueda
+  paralela en productos, ventas, transferencias, órdenes y usuarios (admin). Resultados
+  agrupados que navegan al módulo con `?buscar=` ya aplicado.
+- **Selector de sucursal global**: `SucursalActivaContext` persiste en `localStorage` y
+  alimenta Inventario, Historial de ventas y Compras. El dashboard sigue mostrando datos
+  agregados de toda la red (el backend no expone filtro por sucursal ahí).
+- **Estado en URL**: `hooks/useEstadoUrl.ts` (`useTextoUrl`, `useBanderaUrl`,
+  `useOpcionUrl`) para compartir búsquedas y apertura de diálogos entre sidebar y páginas.
+- **Primitivo UI**: `components/ui/popover.tsx` (Radix) para la campana.
+- **Corrección catálogos**: `catalogos.api.ts` normaliza ids numéricos del backend a
+  `string`, evitando selects de sucursal en blanco al sincronizar con el contexto global.
+
+### Validación
+
+- `tsc`, build, lint (warnings baseline) y **10 tests** en verde (incluye
+  `useEstadoUrl.test.tsx` y `alertas.api.test.ts`).
+- Revisión visual contra backend local: menús del sidebar, paleta de búsqueda con
+  resultados reales, filtro por sucursal en Inventario, deep links (`?nuevo=1`,
+  `?buscar=`, `?vista=historial`).
+
+---
+
 ## Iteración 05 — Administración: gestión de usuarios
 
 ### Objetivo

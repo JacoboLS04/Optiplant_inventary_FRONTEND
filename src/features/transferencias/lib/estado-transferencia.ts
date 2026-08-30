@@ -1,4 +1,5 @@
 import type { StatusTone } from "@/components/shared/StatusBadge";
+import type { Rol } from "@/lib/roles";
 import type {
   EstadoTransferencia,
   UrgenciaTransferencia,
@@ -60,3 +61,22 @@ export const ACCIONES_DISPONIBLES: Record<
   CON_FALTANTES: [],
   CANCELADA: [],
 };
+
+/**
+ * Acciones visibles según el rol del usuario autenticado (RF-064).
+ * Aprobar/rechazar una transferencia es exclusivo de Gerente y Administrador.
+ */
+export function accionesVisibles(
+  estado: EstadoTransferencia,
+  rol: Rol | null
+): AccionTransferencia[] {
+  if (rol === "OPERADOR") {
+    return (ACCIONES_DISPONIBLES[estado] ?? []).filter(
+      (accion) =>
+        accion !== "aprobarOrigen" &&
+        accion !== "aprobarDestino" &&
+        accion !== "rechazar"
+    );
+  }
+  return ACCIONES_DISPONIBLES[estado] ?? [];
+}

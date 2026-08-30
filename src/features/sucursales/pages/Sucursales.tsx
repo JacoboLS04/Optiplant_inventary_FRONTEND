@@ -10,21 +10,24 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBanderaUrl, useTextoUrl } from "@/hooks/useEstadoUrl";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { mensajeDeError } from "@/lib/api-error";
 import { ConfirmarInactivarDialog } from "../components/ConfirmarInactivarDialog";
 import { SucursalFormDialog } from "../components/SucursalFormDialog";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useInactivarSucursal, useSucursales } from "../hooks/useSucursales";
 import type { Sucursal } from "../types";
 
 export default function Sucursales() {
-  const [busqueda, setBusqueda] = useState("");
-  const [formAbierto, setFormAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useTextoUrl("buscar");
+  const [creando, setCreando] = useBanderaUrl("nuevo");
   const [sucursalEnEdicion, setSucursalEnEdicion] = useState<Sucursal | null>(
     null
   );
   const [sucursalEnConfirmacion, setSucursalEnConfirmacion] =
     useState<Sucursal | null>(null);
+
+  const formAbierto = creando || sucursalEnEdicion !== null;
 
   const busquedaDiferida = useDebouncedValue(busqueda.trim());
   const inactivar = useInactivarSucursal();
@@ -43,12 +46,17 @@ export default function Sucursales() {
 
   const abrirCreacion = () => {
     setSucursalEnEdicion(null);
-    setFormAbierto(true);
+    setCreando(true);
   };
 
   const abrirEdicion = (sucursal: Sucursal) => {
     setSucursalEnEdicion(sucursal);
-    setFormAbierto(true);
+  };
+
+  const cerrarFormulario = (abierto: boolean) => {
+    if (abierto) return;
+    setSucursalEnEdicion(null);
+    setCreando(false);
   };
 
   const confirmarInactivacion = async () => {
@@ -218,7 +226,7 @@ export default function Sucursales() {
 
       <SucursalFormDialog
         open={formAbierto}
-        onOpenChange={setFormAbierto}
+        onOpenChange={cerrarFormulario}
         sucursal={sucursalEnEdicion}
       />
 

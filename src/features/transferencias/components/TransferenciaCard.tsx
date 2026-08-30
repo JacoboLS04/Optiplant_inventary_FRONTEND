@@ -4,6 +4,7 @@ import {
   Loader2,
   Package,
   PackageCheck,
+  Printer,
   ThumbsUp,
   XCircle,
 } from "lucide-react";
@@ -13,14 +14,17 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatNumber } from "@/lib/format";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { normalizarRol } from "@/lib/roles";
 import {
-  ACCIONES_DISPONIBLES,
+  accionesVisibles,
   ESTADO_TRANSFERENCIA_LABEL,
   ESTADO_TRANSFERENCIA_TONE,
   URGENCIA_LABEL,
   type AccionTransferencia,
 } from "../lib/estado-transferencia";
 import { useCancelarTransferencia, usePrepararTransferencia } from "../hooks/useTransferencias";
+import { imprimirSolicitudTraslado } from "../lib/documento-traslado";
 import type { Transferencia } from "../types";
 import { AprobarTransferenciaDialog } from "./AprobarTransferenciaDialog";
 import { DespacharTransferenciaDialog } from "./DespacharTransferenciaDialog";
@@ -53,7 +57,13 @@ export function TransferenciaCard({ transferencia }: TransferenciaCardProps) {
   const [despachoAbierto, setDespachoAbierto] = useState(false);
   const [recepcionAbierta, setRecepcionAbierta] = useState(false);
 
-  const acciones = ACCIONES_DISPONIBLES[transferencia.estado];
+  const { user } = useAuth();
+
+  // RF-064: aprobar/rechazar queda restringido a Gerente/Administrador.
+  const acciones = accionesVisibles(
+    transferencia.estado,
+    normalizarRol(user?.role)
+  );
 
   const ejecutar = async (accion: AccionTransferencia) => {
     if (accion === "aprobarOrigen" || accion === "aprobarDestino") {
@@ -115,6 +125,18 @@ export function TransferenciaCard({ transferencia }: TransferenciaCardProps) {
             />
             <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
               Urgencia {URGENCIA_LABEL[transferencia.urgencia]}
+            </span>
+            <span className="ml-auto">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Imprimir ${transferencia.codigo}`}
+                title="Imprimir / guardar PDF"
+                onClick={() => imprimirSolicitudTraslado(transferencia)}
+              >
+                <Printer className="h-4 w-4" aria-hidden="true" />
+              </Button>
             </span>
           </div>
           <p className="text-base font-medium">

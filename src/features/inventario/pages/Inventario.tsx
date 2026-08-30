@@ -17,6 +17,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  TODAS_LAS_SUCURSALES,
+  useSucursalActiva,
+} from "@/features/sucursales/context/SucursalActivaContext";
+import { useBanderaUrl, useTextoUrl } from "@/hooks/useEstadoUrl";
 import { formatCurrency, formatNumber, formatRelativeTime } from "@/lib/format";
 import { mensajeDeError } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
@@ -30,13 +35,16 @@ import { NuevoProductoDialog } from "../components/NuevoProductoDialog";
 import { useInactivarProducto, useProductos } from "../hooks/useInventario";
 import { ESTADO_STOCK_LABEL, ESTADO_STOCK_TONE } from "../lib/estado-stock";
 import { exportarProductosCsv } from "../lib/exportar-csv";
+import { imprimirHojaInventario } from "../lib/documento-inventario";
 import type { Producto, TipoAjuste } from "../types";
 
 const PAGE_SIZE = 10;
 
-const FILTROS_INICIALES: FiltrosInventarioValue = {
+/** La sucursal no vive aquí: la aporta el selector global del sidebar. */
+type FiltrosLocales = Omit<FiltrosInventarioValue, "sucursalId">;
+
+const FILTROS_INICIALES: FiltrosLocales = {
   categoriaId: "todas",
-  sucursalId: "todas",
   estado: "todos",
   periodo: "todos",
 };
@@ -129,12 +137,18 @@ export default function Inventario() {
   const { data: productos = [], isPending, isError, refetch } = useProductos();
   const inactivar = useInactivarProducto();
 
-  const [busqueda, setBusqueda] = useState("");
-  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
+  const { sucursalId, setSucursalId } = useSucursalActiva();
+  const [busqueda, setBusqueda] = useTextoUrl("buscar");
+  const [dialogoProducto, setDialogoProducto] = useBanderaUrl("nuevo");
+  const [filtrosLocales, setFiltrosLocales] = useState(FILTROS_INICIALES);
   const [pagina, setPagina] = useState(1);
-  const [dialogoProducto, setDialogoProducto] = useState(false);
   const [ajuste, setAjuste] = useState<TipoAjuste | null>(null);
   const [productoEnBaja, setProductoEnBaja] = useState<Producto | null>(null);
+
+  const filtros = useMemo<FiltrosInventarioValue>(
+    () => ({ ...filtrosLocales, sucursalId }),
+    [filtrosLocales, sucursalId]
+  );
 
   const filtrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -167,9 +181,18 @@ export default function Inventario() {
     paginaActual * PAGE_SIZE
   );
 
-  const actualizarFiltros = (siguiente: FiltrosInventarioValue) => {
-    setFiltros(siguiente);
+  const actualizarFiltros = ({
+    sucursalId: siguienteSucursal,
+    ...resto
+  }: FiltrosInventarioValue) => {
+    if (siguienteSucursal !== sucursalId) setSucursalId(siguienteSucursal);
+    setFiltrosLocales(resto);
     setPagina(1);
+  };
+
+  const restablecerFiltros = () => {
+    setBusqueda("");
+    actualizarFiltros({ ...FILTROS_INICIALES, sucursalId: TODAS_LAS_SUCURSALES });
   };
 
   const actualizarBusqueda = (valor: string) => {
@@ -181,6 +204,29 @@ export default function Inventario() {
     exportarProductosCsv(filtrados);
     toast.success("Exportación generada", {
       description: `${formatNumber(filtrados.length)} productos incluidos en el archivo.`,
+    });
+  };
+
+  const imprimir = () => {
+    const primeraSucursal =
+      filtros.sucursalId === "todas"
+        ? null
+        : filtrados.find((p) => p.sucursalId === filtros.sucursalId)?.sucursal ??
+          "—";
+    imprimirHojaInventario(filtrados, {
+      sucursal:
+        filtros.sucursalId === "todas"
+          ? "Todas las sucursales"
+          : primeraSucursal ?? "—",
+      estado:
+        filtros.estado === "todos"
+          ? "Todos los estados"
+          : ESTADO_STOCK_LABEL[filtros.estado],
+      categoria:
+        filtros.categoriaId === "todas"
+          ? "Todas las categorías"
+          : filtrados.find((p) => p.categoriaId === filtros.categoriaId)
+              ?.categoria ?? "—",
     });
   };
 
@@ -284,6 +330,7 @@ export default function Inventario() {
             value={filtros}
             onChange={actualizarFiltros}
             onExport={exportar}
+            onPrint={imprimir}
             exportDisabled={filtrados.length === 0}
           />
 
@@ -306,10 +353,7 @@ export default function Inventario() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setBusqueda("");
-                      actualizarFiltros(FILTROS_INICIALES);
-                    }}
+                    onClick={restablecerFiltros}
                   >
                     Restablecer filtros
                   </Button>

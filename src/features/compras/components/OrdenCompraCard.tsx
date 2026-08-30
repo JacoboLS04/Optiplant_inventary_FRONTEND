@@ -6,6 +6,7 @@ import {
   Check,
   Loader2,
   Package,
+  Printer,
   Send,
   Truck,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import {
   type AccionOrden,
 } from "../lib/estado-orden";
 import { useCambiarEstadoOrden } from "../hooks/useCompras";
+import { imprimirOrdenCompra } from "../lib/documento-orden";
 import type { OrdenCompra } from "../types";
 import { RecepcionOrdenDialog } from "./RecepcionOrdenDialog";
 
@@ -81,6 +83,16 @@ export function OrdenCompraCard({ orden }: OrdenCompraCardProps) {
               tone={ESTADO_ORDEN_TONE[orden.estado]}
               label={ESTADO_ORDEN_LABEL[orden.estado]}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Imprimir ${orden.codigo}`}
+              title="Imprimir / guardar PDF"
+              onClick={() => imprimirOrdenCompra(orden)}
+            >
+              <Printer className="h-4 w-4" aria-hidden="true" />
+            </Button>
             <span className="ml-auto text-sm font-semibold tabular-nums">
               {formatCurrency(orden.total)}
             </span>

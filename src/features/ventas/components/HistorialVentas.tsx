@@ -21,6 +21,11 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSucursales } from "@/features/catalogos/hooks/useCatalogos";
+import {
+  TODAS_LAS_SUCURSALES,
+  useSucursalActiva,
+} from "@/features/sucursales/context/SucursalActivaContext";
+import { useTextoUrl } from "@/hooks/useEstadoUrl";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { useVentas } from "../hooks/useVentas";
 import type { Venta } from "../types";
@@ -30,17 +35,22 @@ const PAGE_SIZE = 10;
 
 export function HistorialVentas() {
   const { data: sucursales = [] } = useSucursales();
-  const [busqueda, setBusqueda] = useState("");
-  const [sucursalId, setSucursalId] = useState("todas");
+  const { sucursalId, sucursalIdFiltro, setSucursalId } = useSucursalActiva();
+  const [busqueda, setBusqueda] = useTextoUrl("buscar");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
-  const [page, setPage] = useState(1);
+  const [paginacion, setPaginacion] = useState({ termino: busqueda, page: 1 });
   const [ventaSeleccionada, setVentaSeleccionada] = useState<Venta | null>(null);
+
+  // Una búsqueda nueva (propia o llegada por URL) siempre arranca en la página 1.
+  const page = paginacion.termino === busqueda ? paginacion.page : 1;
+  const cambiarPagina = (nueva: number) =>
+    setPaginacion({ termino: busqueda, page: nueva });
 
   const { data, isPending, isError, isFetching, refetch } = useVentas(
     {
       busqueda: busqueda || undefined,
-      sucursalId: sucursalId === "todas" ? undefined : sucursalId,
+      sucursalId: sucursalIdFiltro,
       desde: desde || undefined,
       hasta: hasta || undefined,
     },
@@ -72,7 +82,7 @@ export function HistorialVentas() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
+                <SelectItem value={TODAS_LAS_SUCURSALES}>Todas</SelectItem>
                 {sucursales.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.nombre}
@@ -148,7 +158,7 @@ export function HistorialVentas() {
             page={page}
             pageSize={PAGE_SIZE}
             totalItems={data?.totalElements ?? 0}
-            onPageChange={setPage}
+            onPageChange={cambiarPagina}
             itemLabel="ventas"
           />
         </>
