@@ -1,9 +1,10 @@
 /** Estado de una orden de compra. Internamente el frontend usa minúsculas;
  *  el backend trabaja con el mismo conjunto en mayúsculas (BORRADOR, ENVIADA,
- *  EN_TRANSITO, RECIBIDA, CANCELADA) y se mapea en la capa de API. */
+ *  CONFIRMADA, EN_TRANSITO, RECIBIDA, CANCELADA) y se mapea en la capa de API. */
 export type EstadoOrdenCompra =
   | "borrador"
   | "enviada"
+  | "confirmada"
   | "en_transito"
   | "recibida"
   | "cancelada";

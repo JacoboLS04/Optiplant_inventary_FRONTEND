@@ -121,7 +121,6 @@ export function DatosEnvioFields({ form }: DatosEnvioFieldsProps) {
       <FormField
         id="transferencia-transportador"
         label="Transportador"
-        hint="Opcional"
       >
         <Input id="transferencia-transportador" {...register("transportador")} />
       </FormField>

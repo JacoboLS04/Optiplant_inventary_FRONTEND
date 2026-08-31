@@ -52,6 +52,7 @@ interface VentaDto {
   usuarioId?: number;
   nombreUsuario?: string;
   descuentoPorcentaje?: number;
+  medioPago?: string;
   subtotal?: number;
   total: number;
   unidades: number;
@@ -77,6 +78,7 @@ function toVenta(dto: VentaDto): Venta {
     usuarioId: getId(dto.usuarioId),
     nombreUsuario: dto.nombreUsuario ?? "",
     descuentoPorcentaje: Number(dto.descuentoPorcentaje ?? 0),
+    medioPago: dto.medioPago ?? undefined,
     subtotal: Number(dto.subtotal ?? 0),
     total: dto.total,
     unidades: dto.unidades,
@@ -113,6 +115,7 @@ export async function registrarVenta(payload: NuevaVentaPayload): Promise<Venta>
   const { data } = await apiClient.post<VentaDto>("/v1/ventas", {
     sucursalId: Number(payload.sucursalId),
     descuentoPorcentaje: payload.descuentoPorcentaje,
+    medioPago: payload.medioPago || undefined,
     lineas: payload.lineas.map((linea) => ({
       productoId: Number(linea.productoId),
       cantidad: linea.cantidad,

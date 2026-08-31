@@ -1,4 +1,4 @@
-export const ROLES = ["ADMINISTRADOR", "GERENTE", "OPERADOR"] as const;
+export const ROLES = ["ADMINISTRADOR", "GERENTE", "OPERADOR", "PROVEEDOR"] as const;
 
 export type Rol = (typeof ROLES)[number];
 
@@ -6,11 +6,19 @@ export const ROL_LABEL: Record<Rol, string> = {
   ADMINISTRADOR: "Administrador",
   GERENTE: "Gerente",
   OPERADOR: "Operador",
+  PROVEEDOR: "Proveedor",
 };
 
-/** Los roles distintos de administrador siempre pertenecen a una sucursal. */
+/**
+ * Los roles internos (Gerente/Operador) siempre pertenecen a una sucursal.
+ * El PROVEEDOR no; se vincula a su proveedor y trabaja desde su portal.
+ */
 export function requiereSucursal(rol: Rol | ""): boolean {
   return rol === "GERENTE" || rol === "OPERADOR";
+}
+
+export function esProveedor(valor?: string | null): boolean {
+  return normalizarRol(valor) === "PROVEEDOR";
 }
 
 /**

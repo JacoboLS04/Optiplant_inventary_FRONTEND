@@ -17,7 +17,7 @@ interface AuthUser {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: AuthUser | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
 }
 
@@ -61,25 +61,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
 
-    // El interceptor de `apiClient` lee el token desde esta misma clave.
-    localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(
-      USER_KEY,
-      JSON.stringify({
-        name: data.nombre,
-        email: data.email,
-        role: data.rol,
-        usuarioId: data.usuarioId == null ? undefined : String(data.usuarioId),
-      })
-    );
-
-    setIsAuthenticated(true);
-    setUser({
+    const authUser: AuthUser = {
       name: data.nombre,
       email: data.email,
       role: data.rol,
       usuarioId: data.usuarioId == null ? undefined : String(data.usuarioId),
-    });
+    };
+
+    // El interceptor de `apiClient` lee el token desde esta misma clave.
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+
+    setIsAuthenticated(true);
+    setUser(authUser);
+    return authUser;
   }, []);
 
   const logout = useCallback(() => {

@@ -3,7 +3,6 @@ import {
   Ban,
   Building2,
   CalendarClock,
-  Check,
   Loader2,
   Package,
   Printer,
@@ -37,8 +36,6 @@ interface OrdenCompraCardProps {
 
 const ETIQUETA_ACCION: Record<AccionOrden, { icon: typeof Send; label: string }> = {
   enviar: { icon: Send, label: "Enviar al proveedor" },
-  marcarEnTransito: { icon: Truck, label: "Marcar en tránsito" },
-  marcarRecibida: { icon: Check, label: "Marcar como recibida" },
   cancelar: { icon: Ban, label: "Cancelar" },
   registrarRecepcion: { icon: Package, label: "Registrar recepción" },
 };

@@ -5,6 +5,7 @@ import type { EstadoOrdenCompra } from "../types";
 export const ESTADO_ORDEN_LABEL: Record<EstadoOrdenCompra, string> = {
   borrador: "Borrador",
   enviada: "Enviada al proveedor",
+  confirmada: "Confirmada por el proveedor",
   en_transito: "En tránsito",
   recibida: "Recibida",
   cancelada: "Cancelada",
@@ -13,6 +14,7 @@ export const ESTADO_ORDEN_LABEL: Record<EstadoOrdenCompra, string> = {
 export const ESTADO_ORDEN_TONE: Record<EstadoOrdenCompra, StatusTone> = {
   borrador: "neutral",
   enviada: "info",
+  confirmada: "info",
   en_transito: "warning",
   recibida: "success",
   cancelada: "danger",
@@ -22,6 +24,7 @@ export const ESTADO_ORDEN_TONE: Record<EstadoOrdenCompra, StatusTone> = {
 export const ETAPAS_ENVIO: Step[] = [
   { id: "borrador", label: "Borrador" },
   { id: "enviada", label: "Enviada" },
+  { id: "confirmada", label: "Confirmada" },
   { id: "en_transito", label: "En tránsito" },
   { id: "recibida", label: "Recibida" },
 ];
@@ -32,12 +35,11 @@ export function etapaActual(estado: EstadoOrdenCompra): number {
 }
 
 /** Acciones de cambio de estado que el backend acepta según el estado actual
- *  (mapeadas de la máquina de estados: BORRADOR -> ENVIADA -> EN_TRANSITO ->
- *  RECIBIDA, y CANCELADA permitida desde BORRADOR/ENVIADA). */
+ *  (mapeadas de la máquina de estados: BORRADOR -> ENVIADA -> CONFIRMADA ->
+ *  EN_TRANSITO -> RECIBIDA. CONFIRMADA y EN_TRANSITO las ejecuta el proveedor
+ *  desde su portal; el usuario interno solo envía, cancela y recibe). */
 export type AccionOrden =
   | "enviar"
-  | "marcarEnTransito"
-  | "marcarRecibida"
   | "cancelar"
   | "registrarRecepcion";
 
@@ -46,8 +48,9 @@ export const ACCIONES_DISPONIBLES: Record<
   AccionOrden[]
 > = {
   borrador: ["enviar", "cancelar"],
-  enviada: ["marcarEnTransito", "cancelar", "registrarRecepcion"],
-  en_transito: ["marcarRecibida", "registrarRecepcion"],
+  enviada: ["cancelar"],
+  confirmada: ["cancelar"],
+  en_transito: ["registrarRecepcion"],
   recibida: [],
   cancelada: [],
 };
@@ -55,7 +58,5 @@ export const ACCIONES_DISPONIBLES: Record<
 /** Destino de cada acción de cambio de estado. */
 export const DESTINO_ACCION: Partial<Record<AccionOrden, EstadoOrdenCompra>> = {
   enviar: "enviada",
-  marcarEnTransito: "en_transito",
-  marcarRecibida: "recibida",
   cancelar: "cancelada",
 };

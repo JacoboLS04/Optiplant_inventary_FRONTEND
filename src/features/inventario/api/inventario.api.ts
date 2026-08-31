@@ -3,6 +3,7 @@ import type {
   AjusteStockPayload,
   NuevoProductoPayload,
   Producto,
+  ProductoActualizacionPayload,
 } from "../types";
 
 /**
@@ -47,6 +48,7 @@ interface ProductoDto {
   id?: number;
   sku?: string;
   nombre?: string;
+  descripcion?: string;
   categoriaId?: number;
   categoriaNombre?: string;
   unidadBaseId?: number;
@@ -102,6 +104,7 @@ function toProducto(
     id: getId(productoId),
     sku: dto.sku ?? prod?.sku ?? "",
     nombre: dto.nombreProducto ?? prod?.nombre ?? "",
+    descripcion: prod?.descripcion ?? "",
     categoriaId: getId(categoriaId),
     categoria: prod?.categoriaNombre ?? "—",
     sucursalId: getId(dto.sucursalId),
@@ -145,6 +148,7 @@ export async function crearProducto(
     .post<ExistenciaDto>("/v1/productos", {
       sku: payload.sku,
       nombre: payload.nombre,
+      descripcion: payload.descripcion ?? undefined,
       categoriaId: Number(payload.categoriaId),
       unidadBaseId,
     })
@@ -191,6 +195,7 @@ export async function crearProducto(
     id: String(productoId),
     sku: payload.sku,
     nombre: payload.nombre,
+    descripcion: payload.descripcion ?? "",
     categoriaId: payload.categoriaId,
     categoria: "—",
     sucursalId: payload.sucursalId,
@@ -206,6 +211,47 @@ export async function crearProducto(
 
 export async function inactivarProducto(id: string): Promise<void> {
   await apiClient.patch(`/v1/productos/${id}/estado`);
+}
+
+export async function actualizarProducto(
+  payload: ProductoActualizacionPayload
+): Promise<Producto> {
+  // El PUT del backend exige unidadBaseId; lo recuperamos del producto actual.
+  const actual = await apiClient
+    .get<ProductoDto>(`/v1/productos/${Number(payload.id)}`)
+    .then((res) => res.data);
+
+  await apiClient.put(`/v1/productos/${Number(payload.id)}`, {
+    nombre: payload.nombre,
+    descripcion: payload.descripcion || undefined,
+    categoriaId: Number(payload.categoriaId),
+    unidadBaseId: actual.unidadBaseId ?? 1,
+    sku: actual.sku,
+  });
+
+  // Actualizar precio si cambió.
+  if (payload.precioUnitario >= 0) {
+    await apiClient.put(`/v1/precios/${Number(payload.id)}`, {
+      precio: payload.precioUnitario,
+    });
+  }
+
+  // Actualizar stock mínimo de la existencia de la sucursal correspondiente.
+  const existencias = await fetchAllPages<ExistenciaDto>("/v1/existencias", {
+    search: actual.sku,
+  });
+  const existencia = existencias.find(
+    (e) => String(e.productoId ?? e.id) === String(payload.id)
+  );
+  if (existencia?.id) {
+    await apiClient.put(`/v1/existencias/${existencia.id}`, {
+      stockMinimo: payload.stockMinimo,
+    });
+  }
+
+  const resultado = (await fetchProductos()).find((p) => p.id === payload.id);
+  if (!resultado) throw new Error("No se pudo recuperar el producto actualizado");
+  return resultado;
 }
 
 export async function registrarAjusteStock(

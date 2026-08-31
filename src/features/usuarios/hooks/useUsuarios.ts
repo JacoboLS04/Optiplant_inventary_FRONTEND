@@ -9,15 +9,25 @@ import {
   actualizarUsuario,
   cambiarEstadoUsuario,
   crearUsuario,
+  fetchUsuarioActual,
   fetchUsuarios,
 } from "../api/usuarios.api";
 import type { FiltrosUsuarios } from "../types";
 
 export const usuariosKeys = {
   all: ["usuarios"] as const,
+  yo: () => [...usuariosKeys.all, "yo"] as const,
   lista: (filtros: FiltrosUsuarios) =>
     [...usuariosKeys.all, "lista", filtros] as const,
 };
+
+/** Perfil del usuario autenticado (incluye su sucursal/proveedor). */
+export function useUsuarioActual() {
+  return useQuery({
+    queryKey: usuariosKeys.yo(),
+    queryFn: fetchUsuarioActual,
+  });
+}
 
 export function useUsuarios(filtros: FiltrosUsuarios) {
   return useQuery({

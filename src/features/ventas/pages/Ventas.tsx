@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { RefreshButton } from "@/components/shared/RefreshButton";
 import { useOpcionUrl } from "@/hooks/useEstadoUrl";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export default function Ventas() {
 
   const [lineas, setLineas] = useState<LineaVenta[]>([]);
   const [descuento, setDescuento] = useState(0);
+  const [medioPago, setMedioPago] = useState("");
   const [dialogoDescuento, setDialogoDescuento] = useState(false);
 
   const sucursalActiva = lineas[0]?.sucursalId;
@@ -105,14 +107,21 @@ export default function Ventas() {
   const vaciar = () => {
     setLineas([]);
     setDescuento(0);
+    setMedioPago("");
   };
 
   const registrar = async () => {
     if (!sucursalActiva) return;
 
+    if (!medioPago) {
+      toast.error("Selecciona el medio de pago");
+      return;
+    }
+
     const venta = await registrarVenta.mutateAsync({
       sucursalId: sucursalActiva,
       descuentoPorcentaje: descuento,
+      medioPago,
       lineas: lineas.map((linea) => ({
         productoId: linea.productoId,
         cantidad: linea.cantidad,
@@ -131,8 +140,10 @@ export default function Ventas() {
         title="Ventas"
         description="Registro de ventas y comprobantes sobre las existencias."
         actions={
-          <div className="inline-flex rounded-lg border bg-background p-1">
-            <button
+          <div className="flex flex-wrap items-center gap-2">
+            <RefreshButton />
+            <div className="inline-flex rounded-lg border bg-background p-1">
+              <button
               type="button"
               onClick={() => setVista("nueva")}
               aria-pressed={vista === "nueva"}
@@ -158,6 +169,7 @@ export default function Ventas() {
             >
               Historial
             </button>
+            </div>
           </div>
         }
       />
@@ -178,6 +190,7 @@ export default function Ventas() {
               descuentoPorcentaje={descuento}
               total={total}
               sucursalNombre={sucursalNombre}
+              medioPago={medioPago}
               isSubmitting={registrarVenta.isPending}
               onCantidadChange={cambiarCantidad}
               onQuitar={(productoId) =>
@@ -186,6 +199,7 @@ export default function Ventas() {
                 )
               }
               onAbrirDescuento={() => setDialogoDescuento(true)}
+              onMedioPagoChange={setMedioPago}
               onRegistrar={() => void registrar()}
               onVaciar={vaciar}
             />

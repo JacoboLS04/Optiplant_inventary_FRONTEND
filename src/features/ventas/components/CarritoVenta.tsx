@@ -9,9 +9,26 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import type { LineaVenta } from "../types";
+
+export const MEDIOS_DE_PAGO = [
+  "Efectivo",
+  "Tarjeta débito",
+  "Tarjeta crédito",
+  "Transferencia",
+  "Yape / Plin",
+  "Crédito",
+] as const;
 
 interface CarritoVentaProps {
   lineas: LineaVenta[];
@@ -19,10 +36,12 @@ interface CarritoVentaProps {
   descuentoPorcentaje: number;
   total: number;
   sucursalNombre?: string;
+  medioPago?: string;
   isSubmitting: boolean;
   onCantidadChange: (productoId: string, cantidad: number) => void;
   onQuitar: (productoId: string) => void;
   onAbrirDescuento: () => void;
+  onMedioPagoChange: (medio: string) => void;
   onRegistrar: () => void;
   onVaciar: () => void;
 }
@@ -33,10 +52,12 @@ export function CarritoVenta({
   descuentoPorcentaje,
   total,
   sucursalNombre,
+  medioPago,
   isSubmitting,
   onCantidadChange,
   onQuitar,
   onAbrirDescuento,
+  onMedioPagoChange,
   onRegistrar,
   onVaciar,
 }: CarritoVentaProps) {
@@ -149,6 +170,29 @@ export function CarritoVenta({
         </dl>
 
         <div className="space-y-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="medio-pago">Medio de pago</Label>
+            <Select
+              value={medioPago ?? ""}
+              onValueChange={onMedioPagoChange}
+              disabled={lineas.length === 0}
+            >
+              <SelectTrigger
+                id="medio-pago"
+                className={lineas.length === 0 ? "opacity-60" : ""}
+              >
+                <SelectValue placeholder="Selecciona el medio de pago" />
+              </SelectTrigger>
+              <SelectContent>
+                {MEDIOS_DE_PAGO.map((medio) => (
+                  <SelectItem key={medio} value={medio}>
+                    {medio}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             type="button"
             variant="outline"

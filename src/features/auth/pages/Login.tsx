@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { Leaf, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { esProveedor } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 interface LoginFormData {
@@ -27,7 +28,11 @@ export default function Login() {
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
     try {
-      await login(data.email, data.password);
+      const usuario = await login(data.email, data.password);
+      if (esProveedor(usuario.role)) {
+        navigate("/portal-proveedor", { replace: true });
+        return;
+      }
       navigate("/dashboard", { replace: true });
     } catch {
       setServerError("Error al iniciar sesión. Intenta de nuevo.");

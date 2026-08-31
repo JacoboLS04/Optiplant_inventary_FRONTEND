@@ -22,6 +22,8 @@ interface UsuarioDto {
   rol?: string;
   sucursalId?: number | string | null;
   sucursalNombre?: string | null;
+  proveedorId?: number | string | null;
+  proveedorNombre?: string | null;
   activo?: boolean;
 }
 
@@ -40,6 +42,11 @@ function toUsuario(dto: UsuarioDto): Usuario {
       ? null
       : String(dto.sucursalId);
 
+  const proveedorId =
+    dto.proveedorId === null || dto.proveedorId === undefined
+      ? null
+      : String(dto.proveedorId);
+
   return {
     id: String(dto.id),
     email: dto.email ?? "",
@@ -47,8 +54,17 @@ function toUsuario(dto: UsuarioDto): Usuario {
     rol: normalizarRol(dto.rol) ?? "OPERADOR",
     sucursalId,
     sucursalNombre: dto.sucursalNombre ?? null,
+    proveedorId,
+    proveedorNombre: dto.proveedorNombre ?? null,
     activo: dto.activo ?? false,
   };
+}
+
+/** Obtiene el perfil del usuario autenticado (incluye su sucursal/proveedor).
+ *  Ruta pública para cualquier sesión: `GET /v1/auth/me`. */
+export async function fetchUsuarioActual(): Promise<Usuario> {
+  const { data } = await apiClient.get<UsuarioDto>("/v1/auth/me");
+  return toUsuario(data);
 }
 
 /** Los ids de sucursal del backend son numéricos; se envían como número. */

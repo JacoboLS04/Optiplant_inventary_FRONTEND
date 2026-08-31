@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowUpDown, Loader2, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { RefreshButton } from "@/components/shared/RefreshButton";
 import { EmptyState, ErrorState } from "@/components/shared/SectionState";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { TablePagination } from "@/components/shared/TablePagination";
@@ -66,10 +67,13 @@ export default function Transferencias() {
         title="Transferencias"
         description="Traslado de existencias entre sucursales de la red."
         actions={
-          <Button type="button" onClick={() => setCrearAbierto(true)}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nueva transferencia
-          </Button>
+          <>
+            <RefreshButton />
+            <Button type="button" onClick={() => setCrearAbierto(true)}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nueva transferencia
+            </Button>
+          </>
         }
       />
 

@@ -66,6 +66,7 @@ export const productosStore: Producto[] = SEEDS.map(
     id: `PRD-${String(index + 1).padStart(3, "0")}`,
     sku,
     nombre,
+    descripcion: "",
     categoriaId,
     categoria,
     sucursalId,

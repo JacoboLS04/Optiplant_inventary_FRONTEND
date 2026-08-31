@@ -16,6 +16,20 @@ import { Label } from "@/components/ui/label";
 import { useDespacharTransferencia } from "../hooks/useTransferencias";
 import type { Transferencia } from "../types";
 
+const TRANSPORTISTA_DEFECTO = "Transportes OptiPlant";
+
+function generarGuia(codigo: string): string {
+  const hoy = new Date();
+  const fecha = [
+    hoy.getFullYear(),
+    String(hoy.getMonth() + 1).padStart(2, "0"),
+    String(hoy.getDate()).padStart(2, "0"),
+  ].join("");
+  const aleatorio = Math.floor(1000 + Math.random() * 9000);
+  const num = codigo.replace(/\D/g, "") || "000";
+  return `G-${num}-${fecha}-${aleatorio}`;
+}
+
 interface DespacharTransferenciaDialogProps {
   transferencia: Transferencia;
   open: boolean;
@@ -29,8 +43,10 @@ export function DespacharTransferenciaDialog({
 }: DespacharTransferenciaDialogProps) {
   const despachar = useDespacharTransferencia();
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
-  const [transportista, setTransportista] = useState(transferencia.transportista);
-  const [guia, setGuia] = useState("");
+  const [transportista, setTransportista] = useState(
+    transferencia.transportista || TRANSPORTISTA_DEFECTO
+  );
+  const [guia, setGuia] = useState(generarGuia(transferencia.codigo));
 
   const confirmar = async () => {
     const lineas = transferencia.lineas.map((linea) => ({
@@ -119,7 +135,7 @@ export function DespacharTransferenciaDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="despacho-guia">N° de guía (opcional)</Label>
+              <Label htmlFor="despacho-guia">N° de guía</Label>
               <Input
                 id="despacho-guia"
                 value={guia}

@@ -117,6 +117,40 @@ export function AprobarTransferenciaDialog({
             </Select>
           </div>
 
+          {esAprobacion && rol === "ORIGEN" ? (
+            <div className="rounded-lg border bg-secondary/40 p-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Stock en {transferencia.nombreSucursalOrigen} tras aprobar
+              </p>
+              <ul className="space-y-2 text-sm">
+                {transferencia.lineas.map((linea) => {
+                  const disponible = linea.cantidadDisponibleOrigen;
+                  const despues = disponible - linea.cantidadSolicitada;
+                  return (
+                    <li
+                      key={linea.id}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <span className="truncate">{linea.nombreProducto}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {despues >= 0 ? (
+                          <>
+                            {despues.toLocaleString("es-PE")}{" "}
+                            <span className="text-xs">disp. tras aprobar</span>
+                          </>
+                        ) : (
+                          <span className="font-medium text-destructive">
+                            Stock insuficiente (−{Math.abs(despues).toLocaleString("es-PE")})
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="space-y-1.5">
             <Label htmlFor="observacion-aprobacion">Observación (opcional)</Label>
             <Textarea

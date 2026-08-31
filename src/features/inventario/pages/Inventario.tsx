@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { Archive, ChevronDown, MinusCircle, PackageSearch, Plus, PlusCircle, Trash2 } from "lucide-react";
+import { Archive, ChevronDown, MinusCircle, PackageSearch, Pencil, Plus, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { RefreshButton } from "@/components/shared/RefreshButton";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { EmptyState } from "@/components/shared/SectionState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -21,12 +22,15 @@ import {
   TODAS_LAS_SUCURSALES,
   useSucursalActiva,
 } from "@/features/sucursales/context/SucursalActivaContext";
+import { useUsuarioActual } from "@/features/usuarios/hooks/useUsuarios";
 import { useBanderaUrl, useTextoUrl } from "@/hooks/useEstadoUrl";
+import { esAdministrador } from "@/lib/roles";
 import { formatCurrency, formatNumber, formatRelativeTime } from "@/lib/format";
 import { mensajeDeError } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
 import { AjusteStockDialog } from "../components/AjusteStockDialog";
 import { BajaProductoDialog } from "../components/BajaProductoDialog";
+import { EditarProductoDialog } from "../components/EditarProductoDialog";
 import {
   FiltrosInventario,
   type FiltrosInventarioValue,
@@ -138,22 +142,36 @@ export default function Inventario() {
   const inactivar = useInactivarProducto();
 
   const { sucursalId, setSucursalId } = useSucursalActiva();
+  const { data: usuarioActual } = useUsuarioActual();
+
   const [busqueda, setBusqueda] = useTextoUrl("buscar");
   const [dialogoProducto, setDialogoProducto] = useBanderaUrl("nuevo");
   const [filtrosLocales, setFiltrosLocales] = useState(FILTROS_INICIALES);
   const [pagina, setPagina] = useState(1);
   const [ajuste, setAjuste] = useState<TipoAjuste | null>(null);
   const [productoEnBaja, setProductoEnBaja] = useState<Producto | null>(null);
+  const [productoEnEdicion, setProductoEnEdicion] = useState<Producto | null>(null);
+
+  // RF-009: el operador solo ve los productos de su propia sucursal; el
+  // ADMINISTRADOR (y el gerente con selector) ven toda la red.
+  const esAdmin = esAdministrador(usuarioActual?.rol);
+  const sucursalUsuario = usuarioActual?.sucursalId ?? null;
+  const soloMiSucursal = !esAdmin && sucursalUsuario !== null;
 
   const filtros = useMemo<FiltrosInventarioValue>(
     () => ({ ...filtrosLocales, sucursalId }),
     [filtrosLocales, sucursalId]
   );
 
+  const filtradosSoloSucursal = useMemo(() => {
+    if (!soloMiSucursal) return productos;
+    return productos.filter((p) => p.sucursalId === sucursalUsuario);
+  }, [productos, soloMiSucursal, sucursalUsuario]);
+
   const filtrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
 
-    return productos.filter((producto) => {
+    return filtradosSoloSucursal.filter((producto) => {
       const coincideTexto =
         termino.length === 0 ||
         producto.nombre.toLowerCase().includes(termino) ||
@@ -170,7 +188,7 @@ export default function Inventario() {
         coincidePeriodo(producto, filtros.periodo)
       );
     });
-  }, [productos, busqueda, filtros]);
+  }, [filtradosSoloSucursal, busqueda, filtros]);
 
   const paginaActual = Math.min(
     pagina,
@@ -264,6 +282,10 @@ export default function Inventario() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{producto.nombre}</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => setProductoEnEdicion(producto)}>
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+                Editar
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setProductoEnBaja(producto)}>
                 <Archive className="h-4 w-4" aria-hidden="true" />
                 Dar de baja
@@ -283,6 +305,8 @@ export default function Inventario() {
         description="Existencias por producto y sucursal en toda la red."
         actions={
           <>
+            <RefreshButton />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button type="button" variant="outline">
@@ -377,6 +401,13 @@ export default function Inventario() {
       <NuevoProductoDialog
         open={dialogoProducto}
         onOpenChange={setDialogoProducto}
+      />
+
+      <EditarProductoDialog
+        producto={productoEnEdicion}
+        onOpenChange={(open) => {
+          if (!open) setProductoEnEdicion(null);
+        }}
       />
 
       <AjusteStockDialog

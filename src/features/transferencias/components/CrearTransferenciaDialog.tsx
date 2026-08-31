@@ -32,7 +32,7 @@ const VALORES_INICIALES: TransferenciaFormValues = {
   sucursalDestinoId: "",
   fechaEnvio: "",
   responsable: "",
-  transportador: "",
+  transportador: "Transportes OptiPlant",
   observaciones: "",
 };
 

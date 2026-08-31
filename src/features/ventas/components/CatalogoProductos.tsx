@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { PackageSearch, Plus, Sprout } from "lucide-react";
+import { Lock, PackageSearch, Plus, Sprout } from "lucide-react";
 
 import { SearchInput } from "@/components/shared/SearchInput";
 import { EmptyState, ErrorState } from "@/components/shared/SectionState";
@@ -18,6 +18,8 @@ import {
   useCategorias,
   useSucursales,
 } from "@/features/catalogos/hooks/useCatalogos";
+import { esAdministrador } from "@/lib/roles";
+import { useUsuarioActual } from "@/features/usuarios/hooks/useUsuarios";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useCatalogoVenta } from "../hooks/useVentas";
 import type { ProductoVenta } from "../types";
@@ -34,6 +36,14 @@ export function CatalogoProductos({
   const { data: catalogo = [], isPending, isError, refetch } = useCatalogoVenta();
   const { data: categorias = [] } = useCategorias();
   const { data: sucursales = [] } = useSucursales();
+  const { data: usuarioActual } = useUsuarioActual();
+
+  // El ADMINISTRADOR puede vender en cualquier sucursal; el resto (operador o
+  // gerente) solo en la suya propia. Los productos de otras sucursales se dejan
+  // visibles con el botón deshabilitado y un aviso, en lugar de permitir que el
+  // 403 del backend aparezca recién al guardar.
+  const esAdmin = esAdministrador(usuarioActual?.rol);
+  const sucursalUsuario = usuarioActual?.sucursalId ?? null;
 
   const [busqueda, setBusqueda] = useState("");
   const [categoriaId, setCategoriaId] = useState("todas");
@@ -121,6 +131,10 @@ export function CatalogoProductos({
             {filtrados.map((producto) => {
               const enCarrito = cantidadesEnCarrito[producto.productoId] ?? 0;
               const agotado = enCarrito >= producto.stockDisponible;
+              const sucursalAjena =
+                !esAdmin &&
+                sucursalUsuario !== null &&
+                producto.sucursalId !== sucursalUsuario;
 
               return (
                 <li key={producto.productoId}>
@@ -142,25 +156,41 @@ export function CatalogoProductos({
                       </div>
                     </div>
 
-                    <div className="mt-auto flex items-end justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold tabular-nums">
-                          {formatCurrency(producto.precioUnitario)}
-                        </p>
-                        <p className="text-xs text-muted-foreground tabular-nums">
-                          {formatNumber(producto.stockDisponible - enCarrito)} disponibles
-                        </p>
+                    <div className="mt-auto flex flex-col gap-2">
+                      <div className="flex items-end justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold tabular-nums">
+                            {formatCurrency(producto.precioUnitario)}
+                          </p>
+                          <p className="text-xs text-muted-foreground tabular-nums">
+                            {formatNumber(producto.stockDisponible - enCarrito)}{" "}
+                            disponibles
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => onAgregar(producto)}
+                          disabled={agotado || sucursalAjena}
+                          aria-label={`Agregar ${producto.nombre} a la venta`}
+                        >
+                          {sucursalAjena ? (
+                            <Lock className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                          )}
+                          {sucursalAjena ? "Otra sucursal" : "Agregar"}
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => onAgregar(producto)}
-                        disabled={agotado}
-                        aria-label={`Agregar ${producto.nombre} a la venta`}
-                      >
-                        <Plus className="h-4 w-4" aria-hidden="true" />
-                        Agregar
-                      </Button>
+                      {sucursalAjena ? (
+                        <p
+                          role="alert"
+                          className="text-xs leading-snug text-destructive"
+                        >
+                          Solo puedes vender en tu sucursal:{" "}
+                          {usuarioActual?.sucursalNombre ?? "la tuya"}.
+                        </p>
+                      ) : null}
                     </div>
                   </article>
                 </li>

@@ -81,6 +81,10 @@ export function DetalleVentaDialog({
               {formatNumber(venta.unidades)} unidades
             </dd>
           </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Medio de pago</dt>
+            <dd className="text-sm font-medium">{venta.medioPago || "—"}</dd>
+          </div>
         </dl>
 
         <Table>

@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -30,6 +31,7 @@ import { useCrearProducto } from "../hooks/useInventario";
 interface NuevoProductoForm {
   sku: string;
   nombre: string;
+  descripcion: string;
   categoriaId: string;
   sucursalId: string;
   stock: string;
@@ -40,6 +42,7 @@ interface NuevoProductoForm {
 const VALORES_INICIALES: NuevoProductoForm = {
   sku: "",
   nombre: "",
+  descripcion: "",
   categoriaId: "",
   sucursalId: "",
   stock: "",
@@ -84,6 +87,7 @@ export function NuevoProductoDialog({
     await crearProducto.mutateAsync({
       sku: values.sku.trim().toUpperCase(),
       nombre: values.nombre.trim(),
+      descripcion: values.descripcion.trim(),
       categoriaId: values.categoriaId,
       sucursalId: values.sucursalId,
       stock: Number(values.stock),
@@ -127,6 +131,22 @@ export function NuevoProductoDialog({
                 id="producto-nombre"
                 aria-invalid={Boolean(errors.nombre)}
                 {...register("nombre", { required: "El nombre es obligatorio" })}
+              />
+            </FormField>
+
+            <FormField
+              id="producto-descripcion"
+              label="Descripción"
+              error={errors.descripcion?.message}
+              className="sm:col-span-2"
+              hint="Opcional"
+            >
+              <Textarea
+                id="producto-descripcion"
+                rows={3}
+                placeholder="Detalles del producto…"
+                aria-invalid={Boolean(errors.descripcion)}
+                {...register("descripcion")}
               />
             </FormField>
 

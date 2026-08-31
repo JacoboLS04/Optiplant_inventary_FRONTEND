@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ClipboardList, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { RefreshButton } from "@/components/shared/RefreshButton";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { EmptyState, ErrorState } from "@/components/shared/SectionState";
 import { Button } from "@/components/ui/button";
@@ -114,10 +115,13 @@ export default function Compras() {
         title="Órdenes de compra"
         description="Seguimiento del abastecimiento solicitado a proveedores."
         actions={
-          <Button type="button" onClick={() => setCrearAbierto(true)}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nueva orden
-          </Button>
+          <>
+            <RefreshButton />
+            <Button type="button" onClick={() => setCrearAbierto(true)}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nueva orden
+            </Button>
+          </>
         }
       />
 

@@ -132,6 +132,11 @@ export function HistorialVentas() {
                     <span className="rounded-md bg-foreground px-2 py-0.5 font-mono text-xs font-medium text-background">
                       {venta.codigo}
                     </span>
+                    {venta.medioPago ? (
+                      <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        {venta.medioPago}
+                      </span>
+                    ) : null}
                     <span className="text-xs text-muted-foreground">
                       {formatDate(venta.fecha)}
                     </span>

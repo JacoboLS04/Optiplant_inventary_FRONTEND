@@ -7,6 +7,8 @@ export interface Usuario {
   rol: Rol;
   sucursalId: string | null;
   sucursalNombre: string | null;
+  proveedorId: string | null;
+  proveedorNombre: string | null;
   activo: boolean;
 }
 

@@ -16,10 +16,16 @@ const Sucursales = lazy(
   () => import("@/features/sucursales/pages/Sucursales")
 );
 const AppLayout = lazy(() => import("@/components/layout/AppLayout"));
+const PortalProveedorLayout = lazy(
+  () => import("@/components/layout/PortalProveedorLayout")
+);
 const ProtectedRoute = lazy(
   () => import("@/components/layout/ProtectedRoute")
 );
 const RoleRoute = lazy(() => import("@/components/layout/RoleRoute"));
+const PortalProveedor = lazy(
+  () => import("@/features/portal-proveedor/pages/PortalProveedor")
+);
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -125,6 +131,30 @@ export const router = createBrowserRouter([
             ),
           },
         ],
+      },
+    ],
+  },
+  {
+    // Portal de proveedor: sesión + rol PROVEEDOR obligatorio (layout propio,
+    // sin el menú lateral interno de la app).
+    path: "/portal-proveedor",
+    element: (
+      <SuspenseWrapper>
+        <ProtectedRoute>
+          <RoleRoute roles={["PROVEEDOR"]}>
+            <PortalProveedorLayout />
+          </RoleRoute>
+        </ProtectedRoute>
+      </SuspenseWrapper>
+    ),
+    children: [
+      {
+        index: true,
+        element: (
+          <SuspenseWrapper>
+            <PortalProveedor />
+          </SuspenseWrapper>
+        ),
       },
     ],
   },

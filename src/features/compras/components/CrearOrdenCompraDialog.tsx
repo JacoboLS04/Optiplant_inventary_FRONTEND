@@ -57,14 +57,29 @@ export interface LineaOrdenForm {
   descuento: number;
 }
 
-const VALORES_INICIALES: OrdenForm = {
+const TRANSPORTISTA_DEFECTO = "Transportes OptiPlant";
+
+function generarGuia(codigo = "000"): string {
+  const hoy = new Date();
+  const fecha = [
+    hoy.getFullYear(),
+    String(hoy.getMonth() + 1).padStart(2, "0"),
+    String(hoy.getDate()).padStart(2, "0"),
+  ].join("");
+  const aleatorio = Math.floor(1000 + Math.random() * 9000);
+  const num = codigo.replace(/\D/g, "") || "000";
+  return `G-${num}-${fecha}-${aleatorio}`;
+}
+
+/** Se regenera en cada apertura para que la guía sea siempre nueva. */
+const valoresIniciales = (): OrdenForm => ({
   proveedorId: "",
   sucursalDestinoId: "",
   fechaEntregaEstimada: "",
-  transportista: "",
-  guia: "",
+  transportista: TRANSPORTISTA_DEFECTO,
+  guia: generarGuia(),
   condicionesPago: "",
-};
+});
 
 function nuevoKey(productoId: string, indice: number): string {
   return `${productoId}-${Date.now()}-${indice}`;
@@ -92,11 +107,11 @@ export function CrearOrdenCompraDialog({
     control,
     reset,
     formState: { errors },
-  } = useForm<OrdenForm>({ defaultValues: VALORES_INICIALES });
+  } = useForm<OrdenForm>({ defaultValues: valoresIniciales() });
 
   const cerrar = (siguiente: boolean) => {
     if (!siguiente) {
-      reset(VALORES_INICIALES);
+      reset(valoresIniciales());
       setLineas([]);
     }
     onOpenChange(siguiente);
@@ -252,11 +267,11 @@ export function CrearOrdenCompraDialog({
               />
             </FormField>
 
-            <FormField id="orden-transportista" label="Transportista" hint="Opcional">
+            <FormField id="orden-transportista" label="Transportista">
               <Input id="orden-transportista" {...register("transportista")} />
             </FormField>
 
-            <FormField id="orden-guia" label="Guía" hint="Opcional">
+            <FormField id="orden-guia" label="Guía">
               <Input id="orden-guia" {...register("guia")} />
             </FormField>
 

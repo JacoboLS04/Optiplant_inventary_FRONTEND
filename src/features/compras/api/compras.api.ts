@@ -36,14 +36,14 @@ interface PageEnvelope<T> {
   totalPages: number;
 }
 
-interface ProveedorDto {
+export interface ProveedorDto {
   id: number;
   nombre: string;
   contacto?: string;
   condicionesGenerales?: string;
 }
 
-interface LineaDto {
+export interface LineaDto {
   id: number;
   productoId: number;
   sku?: string;
@@ -56,7 +56,7 @@ interface LineaDto {
   subtotal?: number;
 }
 
-interface OrdenCompraDto {
+export interface OrdenCompraDto {
   id: number;
   codigo?: string;
   proveedorId?: number;
@@ -75,20 +75,21 @@ interface OrdenCompraDto {
   lineas?: LineaDto[];
 }
 
-const ESTADOS_MAP: Record<string, OrdenCompra["estado"]> = {
+export const ESTADOS_MAP: Record<string, OrdenCompra["estado"]> = {
   BORRADOR: "borrador",
   ENVIADA: "enviada",
+  CONFIRMADA: "confirmada",
   EN_TRANSITO: "en_transito",
   RECIBIDA: "recibida",
   CANCELADA: "cancelada",
 };
 
-function toEstado(estado?: string): OrdenCompra["estado"] {
+export function toEstado(estado?: string): OrdenCompra["estado"] {
   if (estado && ESTADOS_MAP[estado]) return ESTADOS_MAP[estado];
   return "borrador";
 }
 
-function toItem(dto: LineaDto): ItemOrdenCompra {
+export function toItem(dto: LineaDto): ItemOrdenCompra {
   return {
     lineaId: String(dto.id),
     productoId: String(dto.productoId),
@@ -123,6 +124,8 @@ function toOrdenCompra(dto: OrdenCompraDto): OrdenCompra {
     total: Number(dto.total ?? 0),
   };
 }
+
+export { toOrdenCompra };
 
 async function fetchTodasLasPaginas(
   params: Record<string, unknown>

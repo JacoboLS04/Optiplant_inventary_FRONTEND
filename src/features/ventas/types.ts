@@ -24,6 +24,7 @@ export interface LineaVenta {
 export interface NuevaVentaPayload {
   sucursalId: string;
   descuentoPorcentaje: number;
+  medioPago?: string;
   lineas: Array<{ productoId: string; cantidad: number }>;
 }
 
@@ -35,6 +36,7 @@ export interface Venta {
   usuarioId: string;
   nombreUsuario: string;
   descuentoPorcentaje: number;
+  medioPago?: string;
   subtotal: number;
   total: number;
   unidades: number;

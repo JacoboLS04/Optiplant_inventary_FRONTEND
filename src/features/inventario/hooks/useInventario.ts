@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  actualizarProducto,
   crearProducto,
   fetchProductos,
   inactivarProducto,
   registrarAjusteStock,
 } from "../api/inventario.api";
+import type { ProductoActualizacionPayload } from "../types";
 
 export const inventarioKeys = {
   all: ["inventario"] as const,
@@ -46,6 +48,18 @@ export function useInactivarProducto() {
 
   return useMutation({
     mutationFn: inactivarProducto,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: inventarioKeys.all });
+    },
+  });
+}
+
+export function useActualizarProducto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ProductoActualizacionPayload) =>
+      actualizarProducto(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: inventarioKeys.all });
     },
