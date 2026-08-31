@@ -1,32 +1,47 @@
-# React + TypeScript + Vite
+# Proyecto Optiplant — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación web de inventario multi-sucursal. SPA construida con React 19,
+TypeScript y Vite.
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Comando           | Descripción                          |
+|-------------------|--------------------------------------|
+| `npm run dev`     | Servidor de desarrollo (Vite).       |
+| `npm run build`   | Compila TypeScript y genera el build.|
+| `npm run lint`    | Revisa el código con Oxlint.         |
+| `npm run preview` | Previsualiza el build de producción. |
+| `npm test`        | Ejecuta los tests con Vitest.        |
 
-## React Compiler
+## Configuración
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+La app se comunica con la API mediante `axios` usando la variable de entorno
+`VITE_API_URL`:
 
-## Expanding the Oxlint configuration
+- En desarrollo apunta a `http://localhost:8080/api` (usa el valor de `.env`).
+- En el contenedor Docker se usa `/api` y Nginx hace proxy hacia el backend.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Copia `.env.example` a `.env` y ajusta `VITE_API_URL` si es necesario.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+## Áreas del sistema
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- Autenticación (login y sesión de usuario)
+- Sucursales y usuarios
+- Catálogos (productos, categorías, unidades de medida, precios)
+- Inventario (existencias y movimientos)
+- Compras (proveedores y órdenes de compra)
+- Ventas
+- Transferencias entre sucursales (con aprobaciones según rol)
+- Buscador y alertas
+- Dashboard con reportes y comparativas
+
+## Stack principal
+
+- React 19 + TypeScript
+- Vite + Tailwind CSS
+- React Router
+- TanStack Query
+- React Hook Form + Zod
+- Axios
+- Recharts
+- Radix UI y Lucide
